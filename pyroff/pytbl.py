@@ -1,0 +1,399 @@
+# -*- coding: utf-8 -*-
+"""
+pytbl.py A parser for the tbl language.
+
+Copyright (C) 2016
+Juan Pablo de la Cruz Gutiérrez
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+* Neither the name of the Juan Pablo de la Cruz Gutierrez or juampatronics may
+  be used to endorse or promote products derived from this software without
+  specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
+import inspect
+from functools import wraps
+from tbllexer import TblLexer
+from .ast import TranslatorFactory, ASTNode, TokenNode
+
+
+class ParserError(Exception):
+    def __init__(self, msg, token):
+        super(ParserError, self).__init__(msg)
+        self.token = token
+        self.msg = msg
+
+
+class InvalidTokenError(ParserError):
+    def __init__(self, token, expected=None):
+        super(InvalidTokenError, self).__init__('Unexpected token', token)
+        self.expected = expected
+
+    def __str__(self):
+        if not self.expected:
+            return self.msg + ': got ' + self.token
+        else:
+            return self.msg + ': got ' + self.token + ', but expected : ' +\
+                   self.expected
+
+
+def trace_rule(rule):
+    debug = False
+
+    @wraps(rule)
+    def wrapper(self, p):
+        if debug:
+            print('>>> ' + rule.__name__ + ' : ', p)
+        result = rule(self, p)
+        if debug:
+            print('<<< ', result)
+        return result
+    return wrapper
+
+
+class TblParser(object):
+    '''This tbl parser is a very simple state machine. For a given state, only
+       some specific tokens are expected. This is coded in the dictionary
+       self.states. For each state there is a corresponding method, named after
+       the state and starting with the prefix 'p_' by convention, which is
+       responsible for checking the validity of the next token, generating its
+       tree node representation, and switching to the next state
+       (for each state there is a token signaling its end, see man tbl).
+    '''
+
+    def __init__(self):
+        symbols = inspect.getmembers(self)
+        self.actions = dict((name[name.find('_') + 1:], f)
+                            for name, f in symbols
+                            if name.startswith('p_') and inspect.ismethod(f))
+
+        self.states = {'start': ['START'],
+                       'options': ['TAB', 'ALLBOX', 'EXPAND', 'CENTER',
+                                   'LINESIZE', 'SEMICOLON', 'COMMA', 'BOX'],
+                       'format': ['VLINE', 'DBLVLINE', 'FORMAT', 'FONT',
+                                  'DOT', 'ENDFMTLINE'],
+                       'data': ['TBLDATA', 'EMPTYLINE', 'EMPTYCELL', 'END',
+                                'HLINE', 'DBLHLINE', 'NEWLINE']}
+        self._reset()
+
+    def _reset(self):
+        self._current_state = ('start',)
+        self._cell = []
+        self._options = None
+        self._ast = []
+        self._tblrow = ASTNode('tblrow')
+        self._nrow = 0
+        self._ncol = 0
+        # list keeping count of the number of cells beign expanded
+        self._spancount = []
+
+    def expected(self, t):
+        'Checks whether the token is valid given the current state.'
+        for s in self._current_state:
+            if t.type in self.states[s]:
+                return True
+        return False
+
+    @trace_rule
+    def next_state(self, t):
+        '''Returns the next state, given the current token. In the tbl
+        language the options section for the table is optional. If present, it
+        must be the first right after the .TS token. Thus, we need to wait for
+        the next token to decide whether it is present or not.
+        '''
+        for s in self._current_state:
+            if t.type in self.states[s]:
+                return s
+        return None
+
+    @trace_rule
+    def p_start(self, t):
+        if t.type != 'START':
+            raise InvalidTokenError(t, 'START')
+        self._current_state = ('options', 'format')
+
+    @trace_rule
+    def p_options(self, t):
+        if t.type == 'SEMICOLON':
+            self._current_state = ('format',)
+            if self._options is not None:
+                self._ast.append(self._options)
+            return
+        if t.type == 'COMMA':
+            return
+        if self._options is None:
+            self._options = ASTNode('tblformat',
+                                    ASTNode('option', TokenNode(t.value)))
+        else:
+            self._options.add_children(ASTNode('option', TokenNode(t.value)))
+
+    @trace_rule
+    def p_format(self, t):
+        if t.type == 'FORMAT':
+            # s means expanding options defined in prev cell.
+            if len(self._cell) == 0 and t.value.lower() == 's':
+                raise InvalidTokenError(t)
+            self._cell.append(ASTNode('cellfmt', TokenNode(t.value)))
+            return
+        if t.type == 'FONT':
+            # we decided to add font as metadata because in troff the font can
+            # only be specified after the column key letter (l,c,r)
+            self._cell[-1]['font'] = t.value
+        if t.type == 'DOT' or t.type == 'ENDFMTLINE':
+            if len(self._cell) > 0:
+                self._ast.append(ASTNode('cellfmtline', self._cell))
+                self._cell = []
+        if t.type == 'DOT':
+            self._current_state = ('data',)
+
+    def _update_span_attr(self, col):
+        nspan = self._spancount[col]
+        if nspan == 0:
+            return
+        self._ast[-nspan-1]._children[col]['span'] = nspan + 1
+        self._spancount[col] = 0
+
+    @trace_rule
+    def p_data(self, t):
+        if t.type == 'END':
+            self._current_state = ('start',)
+            # check for remaining spanning cells
+            for col in range(len(self._spancount)):
+                self._update_span_attr(col)
+            return
+
+        if t.type == 'NEWLINE':
+            # we need to skip (multiple) newlines before next data
+            if not self._tblrow.is_empty():
+                self._ast.append(self._tblrow)
+                self._nrow += 1
+                self._ncol = 0
+            self._tblrow = ASTNode('tblrow')
+            return
+
+        if t.type == 'EMPTYCELL':
+            # using ^ to span cells refers to prev non-empty cell
+            if not self._tblrow.is_empty() and self._nrow == 0:
+                raise InvalidTokenError(t)
+            t.value = ''
+            self._spancount[self._ncol] += 1
+            self._ncol += 1
+            self._tblrow.add_children(ASTNode('cell', TokenNode(t.value)))
+            return
+
+        self._tblrow.add_children(ASTNode('cell', TokenNode(t.value)))
+        # expand the self._spancount array to max # of columns
+        if self._ncol >= len(self._spancount):
+            self._spancount += [0 for n in
+                                range(self._ncol - len(self._spancount) + 1)]
+        self._update_span_attr(self._ncol)
+        self._ncol += 1
+
+    def parse(self, data):
+        lexer = TblLexer()
+        lexer.input(data)
+        while True:
+            tok = lexer.token()
+            if not tok or not self.expected(tok):
+                break
+            state = self.next_state(tok)
+            if state is None:
+                raise InvalidTokenError(tok)
+            self.actions[state](tok)
+        ast = self._ast
+        self._reset()
+        return ast
+
+
+class TblTranslator(TranslatorFactory):
+    expected = ['tblformat', 'option', 'cellfmt', 'font', 'cellfmtline',
+                'tblrow', 'cell']
+
+    def __init__(self):
+        super(TblTranslator, self).__init__(TblParser(), 'tbl_')
+
+
+if __name__ == "__main__":
+    import unittest as ut
+
+    class BasicTests(ut.TestCase):
+        def setUp(self):
+            self.parser = TblParser()
+
+        def _test_cases(self, expressions, expected):
+            for expr, should in zip(expressions, expected):
+                ast = self.parser.parse(expr)
+                self.assertEqual(should, ast)
+
+        def test_tables(self):
+            expressions = ['''
+                .TS
+                tab (@);
+                c l.
+                1@User Console
+                2@Monochromatic graphics terminal
+                3@Touch screen
+                4@High resolution display
+                .TE''', '''.TS
+                center,box,tab(%);
+                c l.
+                1%User Console
+                2%Monochromatic graphics terminal
+                3%Touch screen
+                4%High resolution display
+                .TE''', '''.TS
+                tab(|);
+                c l
+                r r.
+                1|User Console
+                2|Monochromatic graphics terminal
+                3|Touch screen
+                4|High resolution display
+                .TE''', '''.TS
+                tab(|);
+                c _
+                r r.
+                vertically centered|User Console
+                \^|Monochromatic graphics terminal
+                \^|Touch screen
+                \^|High resolution display
+                =
+                .TE''']
+
+            expected = [
+                [ASTNode('tblformat', ASTNode('option', [TokenNode('@')])),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('c')),
+                      ASTNode('cellfmt', TokenNode('l'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('1')),
+                      ASTNode('cell', TokenNode('User Console'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('2')),
+                      ASTNode('cell',
+                          TokenNode('Monochromatic graphics terminal'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('3')),
+                      ASTNode('cell', TokenNode('Touch screen'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('4')),
+                      ASTNode('cell',
+                          TokenNode('High resolution display'))])],
+
+                [ASTNode('tblformat',
+                     [ASTNode('option', [TokenNode('center')]),
+                      ASTNode('option', [TokenNode('box')]),
+                      ASTNode('option', [TokenNode('%')])]),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('c')),
+                      ASTNode('cellfmt', TokenNode('l'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('1')),
+                      ASTNode('cell', TokenNode('User Console'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('2')),
+                      ASTNode('cell',
+                          TokenNode('Monochromatic graphics terminal'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('3')),
+                      ASTNode('cell', TokenNode('Touch screen'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('4')),
+                     ASTNode('cell', TokenNode('High resolution display'))])],
+
+                [ASTNode('tblformat', ASTNode('option', [TokenNode('|')])),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('c')),
+                      ASTNode('cellfmt', TokenNode('l'))]),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('r')),
+                      ASTNode('cellfmt', TokenNode('r'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('1')),
+                      ASTNode('cell', TokenNode('User Console'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('2')),
+                         ASTNode('cell',
+                             TokenNode('Monochromatic graphics terminal'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('3')),
+                      ASTNode('cell', TokenNode('Touch screen'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('4')),
+                      ASTNode('cell',
+                          TokenNode('High resolution display'))])],
+
+                [ASTNode('tblformat', ASTNode('option', [TokenNode('|')])),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('c')),
+                      ASTNode('cellfmt', TokenNode('_'))]),
+                 ASTNode('cellfmtline',
+                     [ASTNode('cellfmt', TokenNode('r')),
+                      ASTNode('cellfmt', TokenNode('r'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('vertically centered')),
+                      ASTNode('cell', TokenNode('User Console'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('')),
+                      ASTNode('cell',
+                          TokenNode('Monochromatic graphics terminal'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('')),
+                      ASTNode('cell', TokenNode('Touch screen'))]),
+                 ASTNode('tblrow',
+                     [ASTNode('cell', TokenNode('')),
+                         ASTNode('cell',
+                             TokenNode('High resolution display'))]),
+                 ASTNode('tblrow', ASTNode('cell', TokenNode('=')))]
+            ]
+
+            self._test_cases(expressions, expected)
+
+        def test_span(self):
+            'check wether cells are properly spanned over rows'
+
+            expressions = ['''.TS
+                tab(|);
+                c _
+                r r.
+                vertically centered|User Console
+                \^|Monochromatic graphics terminal
+                stop|Touch screen
+                .TE''', '''.TS
+                tab(|);
+                c _
+                r r.
+                vertically centered|User Console
+                \^|Monochromatic graphics terminal
+                \^|Touch screen
+                \^|High resolution display
+                .TE''']
+
+            expected = [2, 4]
+
+            for expr, span in zip(expressions, expected):
+                ast = self.parser.parse(expr)
+                self.assertEqual(ast[3]._children[0]['span'], span)
+
+    ut.main()
