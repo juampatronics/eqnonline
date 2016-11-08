@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 """
-eqn2mathjax.py converts eqn code into LaTeX
+eqn2latex.py converts eqn code into LaTeX
 
 Copyright (C) 2016
 Juan Pablo de la Cruz Gutiérrez
@@ -122,6 +122,17 @@ def eqn_mathop(*args):
 def eqn_brackets(*args):
     return '\\left' + args[0] + args[1:-1] + '\\right' + args[-1] \
         if len(args) > 2 else '\\left' + args[0] + args[1:-1]
+
+
+class Eqn2Latex(object):
+    def __init__(self):
+        self._translator = EqnTranslator.custom(sys.modules[__name__], 'eqn_')
+
+    def translate(self, s):
+        return self._translator.translate(s)
+
+    def translate_file(self, filename):
+        return self._translator.translate_file(filename)
 
 
 class HTMLDoc(object):
