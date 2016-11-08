@@ -36,7 +36,7 @@ from collections import OrderedDict
 import re
 import inspect
 from ply.lex import LexToken, LexError
-from Lexer import Lexer
+from .Lexer import Lexer
 
 DEFAULT_TAB = '@'
 

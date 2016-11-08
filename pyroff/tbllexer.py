@@ -33,8 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from ply import lex
-from Lexer import Lexer
-from tbldatalexer import TblDataLexer
+from .Lexer import Lexer
+from .tbldatalexer import TblDataLexer
 
 
 class TblLexer(Lexer):

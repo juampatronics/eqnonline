@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from .pytbl import TblTranslator
 
 
-class Tbl2Html(object):
+class _Tbl2Html(object):
     def __init__(self):
         self._init_params()
 
@@ -115,11 +115,15 @@ class Tbl2Html(object):
         return '</table>'
 
 
-translator = TblTranslator().from_class(Tbl2Html())
+class Tbl2Html(object):
+    def __init__(self):
+        self._translator = TblTranslator().from_class(_Tbl2Html())
 
+    def translate(self, s):
+        return self._translator.translate(s)
 
-def tbl2html(s):
-    return translator.translate(s)
+    def translate_file(self, filename):
+        return self._translator.translate_file(filename)
 
 
 if __name__ == "__main__":
@@ -128,7 +132,7 @@ if __name__ == "__main__":
 
     class TblTests(ut.TestCase):
         def setUp(self):
-            self._translator = TblTranslator().from_class(Tbl2Html())
+            self._translator = Tbl2Html()
             return self
 
         def test_basiccases(self):

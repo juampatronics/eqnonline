@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import inspect
 from functools import wraps
-from tbllexer import TblLexer
+from .tbllexer import TblLexer
 from .ast import TranslatorFactory, ASTNode, TokenNode
 
 
