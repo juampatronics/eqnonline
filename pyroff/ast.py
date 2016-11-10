@@ -94,6 +94,7 @@ class ASTNode(object):
             self._children += children
         else:
             self._children.append(children)
+        return self
 
     def push_children(self, children):
         'Adds new nodes to the current one'
@@ -101,6 +102,7 @@ class ASTNode(object):
             self._children = children + self._children
         else:
             self._children.insert(0, children)
+        return self
 
     def is_empty(self):
         return len(self._children) == 0
