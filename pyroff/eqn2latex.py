@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .pyeqn import EqnTranslator
 import sys
+import re
 from functools import wraps
 
 
@@ -45,6 +46,12 @@ def trace_rule(rule):
         print(rule.__name__ + ' << ', result)
         return result
     return wrapper
+
+
+def escape_chars(s, chars=r'\\'):
+    'escape control characters'
+    s = re.sub(r'([' + ''.join(chars) + '])', r'\\\1', s)
+    return s
 
 
 # @trace_rule
@@ -200,5 +207,14 @@ if __name__ == "__main__":
                      ('prod from i=0 to N sum from k=0 to K x sub k sup i',
                       r'\prod_{i=0}^{N}\sum_{k=0}^{K}x_{k}^{i}')]
             self._runtests(cases)
+
+        def test_controlchars(self):
+            cases = [(r'\sum', r'\\sum'),
+                     (r'\hat{x_{\lambda}}', r'\\hat{x_{\\lambda}}'),
+                     (r'\hat{x_{\lambda}}', r'\\hat{x_{\\lambda}}'),
+                     (r'x_{\pi} & y^{\delta}', r'x_{\\pi} \& y^{\\delta}')]
+            for case, expected in cases:
+                self.assertEqual(escape_chars(case, r'\\&'), expected)
+                self.assertEqual(escape_chars(case, [r'\\', '&']), expected)
 
     ut.main()

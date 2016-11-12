@@ -35,9 +35,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
 import os
+import re
 # you may as well add pyroff to PYTHONPATH
 sys.path.append('../')
 from pyroff.eqn2latex import Eqn2Latex
+
+
+def escape_chars(s, chars=r'\\'):
+    'escape control characters'
+    s = re.sub(r'([' + ''.join(chars) + '])', r'\\\1', s)
+    return s
 
 
 header = '''
@@ -79,5 +86,7 @@ footer = '''
 '''
 
 for id, line in enumerate(input):
-    body = template.format('katex' + str(id), 'katex' + str(id), eqn2latex.translate(line))
+    body = template.format('katex' + str(id),
+                           'katex' + str(id),
+                           escape_chars(eqn2latex.translate(line)))
     print(header + body + footer)
