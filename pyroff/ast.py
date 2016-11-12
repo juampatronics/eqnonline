@@ -228,4 +228,12 @@ if __name__ == "__main__":
             self.assertEqual(ASTNode('node', TokenNode('123')).__str__(),
                              'node: (123)')
 
+        def test_comparison(self):
+            node = ASTNode('ast')
+            node.add_children(TokenNode('token'))
+            self.assertEqual(node, ASTNode('ast', TokenNode('token')))
+            node.add_children(TokenNode('2nd_token'))
+            self.assertEqual(node,
+                ASTNode('ast', [TokenNode('token'), TokenNode('2nd_token')]))
+
     ut.main()
