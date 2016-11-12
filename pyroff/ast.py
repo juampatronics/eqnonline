@@ -62,6 +62,11 @@ class ASTNode(object):
     def has_key(self, k):
         return k in self._options
 
+    def get(self, key, default=None):
+        if key not in self._options:
+            return default
+        return self._options[key]
+
     def __getitem__(self, key):
         return self._options[key]
 
