@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import inspect
+import re
 from functools import wraps
 from .tbllexer import TblLexer
 from .ast import TranslatorFactory, ASTNode, TokenNode
@@ -163,10 +164,19 @@ class TblParser(object):
             else:
                 self._cell.append(ASTNode('cellfmt', TokenNode(t.value)))
             return
+
         if t.type == 'FONT':
             # we decided to add font as metadata because in troff the font can
             # only be specified after the column key letter (l,c,r)
-            self._cell[-1]['font'] = t.value
+            t.value = t.value.lower()
+            attr = self._cell[-1].get('font', dict())
+            if 'b' in t.value:
+                attr['bold'] = True
+            if 'i' in t.value:
+                attr['italic'] = True
+            if 'p' in t.value:
+                attr['size'] = re.match('.*p([+-]?[0-9]+)', t.value).group(1)
+            self._cell[-1]['font'] = attr
         if t.type == 'DOT' or t.type == 'ENDFMTLINE':
             if len(self._cell) > 0:
                 self._ast.append(ASTNode('cellfmtline', self._cell))
@@ -424,5 +434,26 @@ if __name__ == "__main__":
             for expr, span in zip(expressions, expected):
                 ast = self.parser.parse(expr)
                 self.assertEqual(span[1], ast[1]._children[span[0]]['colspan'])
+
+        def test_font(self):
+            expressions = ['''.TS
+                tab(|);
+                rB ci rbI
+                rBp12 ci rbI.
+                one|two|three|four|five
+                1|2|3|4|5
+                1|2|3|4|5
+                .TE''']
+
+            expected = [(1, 0, {'bold': True}), (1, 1, {'italic': True}),
+                    (1, 2, {'italic': True, 'bold': True}),
+                    (2, 0, {'bold': True, 'size': '12'}),
+                    (2, 1, {'italic': True}),
+                    (2, 2, {'italic': True, 'bold': True})]
+
+            for expr, values in zip(expressions, expected):
+                ast = self.parser.parse(expr)
+                self.assertEqual(values[2],
+                        ast[values[0]]._children[values[1]]['font'])
 
     ut.main()
