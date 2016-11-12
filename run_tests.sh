@@ -7,19 +7,20 @@ coverage=$(which coverage)
 [[ -z $coverage ]] && coverage=$(which python3-coverage)
 [[ -z $coverage ]] && coverage=$(which python2-coverage)
 
-modules=$(ls pyroff/*py | tr '/' '.' | sed 's,\.py$,,' | xargs)
+# modules=$(ls pyroff/*py | tr '/' '.' | sed 's,\.py$,,' | xargs)
+modules="pyeqn pytbl eqn2latex tbl2html ast"
 
 for mod in $modules
 do
-  echo python3 -m $mod
-  python3 -m $mod
+  echo python3 -m "pyroff.$mod"
+  python3 -m "pyroff.$mod"
 done
 
 if [[ $coverage ]]
 then
   for mod in $modules
   do
-    $coverage run -a -m $mod
+    $coverage run -a -m "pyroff.$mod"
   done
   $coverage report
 else
