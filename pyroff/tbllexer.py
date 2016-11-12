@@ -133,7 +133,7 @@ class TblLexer(Lexer):
         return t
 
     def t_format_FONT(self, t):
-        r'(f*[bBiI]|f*cw|f*CW|p(?P<fsize>\[+-]?[0-9]+))'
+        r'(f*[bBiI]|f*cw|f*CW|p(?P<fsize>[+-]?[0-9]+))'
         return t
 
     def t_format_VLINE(self, t):
