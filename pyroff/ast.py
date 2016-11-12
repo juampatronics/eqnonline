@@ -60,7 +60,7 @@ class ASTNode(object):
         return self._options.keys()
 
     def has_key(self, k):
-        return self._options.has_key(k)
+        return k in self._options
 
     def __getitem__(self, key):
         return self._options[key]

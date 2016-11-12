@@ -107,6 +107,7 @@ class TblParser(object):
         self._ncol = 0
         # list keeping count of the number of cells beign expanded
         self._spancount = []
+        self._spanrow = []
 
     def expected(self, t):
         'Checks whether the token is valid given the current state.'
@@ -152,9 +153,15 @@ class TblParser(object):
     def p_format(self, t):
         if t.type == 'FORMAT':
             # s means expanding options defined in prev cell.
-            if len(self._cell) == 0 and t.value.lower() == 's':
-                raise InvalidTokenError(t)
-            self._cell.append(ASTNode('cellfmt', TokenNode(t.value)))
+            if t.value.lower() == 's':
+                if len(self._cell) == 0:
+                    raise InvalidTokenError(t)
+                if not self._cell[-1].has_key('colspan'):
+                    self._cell[-1]['colspan'] = 2
+                else:
+                    self._cell[-1]['colspan'] += 1
+            else:
+                self._cell.append(ASTNode('cellfmt', TokenNode(t.value)))
             return
         if t.type == 'FONT':
             # we decided to add font as metadata because in troff the font can
@@ -382,8 +389,8 @@ if __name__ == "__main__":
                 stop|Touch screen
                 .TE''', '''.TS
                 tab(|);
-                c _
-                r r.
+                c c
+                l r.
                 vertically centered|User Console
                 \^|Monochromatic graphics terminal
                 \^|Touch screen
@@ -395,5 +402,27 @@ if __name__ == "__main__":
             for expr, span in zip(expressions, expected):
                 ast = self.parser.parse(expr)
                 self.assertEqual(ast[3]._children[0]['span'], span)
+
+        def test_colspan(self):
+            expressions = ['''.TS
+                tab(|);
+                r s s s.
+                one|two|three|four|five
+                1|2|3|4|5
+                1|2|3|4|5
+                .TE''', '''.TS
+                tab(|);
+                r c s r.
+                vertically centered|User Console
+                Monochromatic graphics terminal
+                Touch screen
+                High resolution display
+                .TE''']
+
+            expected = [(0, 4), (1, 2)]
+
+            for expr, span in zip(expressions, expected):
+                ast = self.parser.parse(expr)
+                self.assertEqual(span[1], ast[1]._children[span[0]]['colspan'])
 
     ut.main()
