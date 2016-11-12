@@ -2,7 +2,11 @@
 #
 # Juan Pablo de la Cruz Gutierrez
 
-has_coverage=$(which coverage1)
+coverage=$(which coverage3)
+coverage=$(which coverage)
+[[ -z $coverage ]] && coverage=$(which python3-coverage)
+[[ -z $coverage ]] && coverage=$(which python2-coverage)
+
 modules=$(ls pyroff/*py | tr '/' '.' | sed 's,\.py$,,' | xargs)
 
 for mod in $modules
@@ -11,13 +15,13 @@ do
   python3 -m $mod
 done
 
-if [[ $has_coverage ]]
+if [[ $coverage ]]
 then
   for mod in $modules
   do
-    coverage run -a -m $mod
+    $coverage run -a -m $mod
   done
-  coverage report
+  $coverage report
 else
   echo "Install the coverage module if you wish to get a " \
 "report on code coverage" >&2
