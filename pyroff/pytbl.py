@@ -60,15 +60,11 @@ class InvalidTokenError(ParserError):
 
 
 def trace_rule(rule):
-    debug = False
-
     @wraps(rule)
     def wrapper(self, p):
-        if debug:
-            print('>>> ' + rule.__name__ + ' : ', p)
+        print('>>> ' + rule.__name__ + ' : ', p)
         result = rule(self, p)
-        if debug:
-            print('<<< ', result)
+        print('<<< ', result)
         return result
     return wrapper
 
@@ -117,7 +113,6 @@ class TblParser(object):
                 return True
         return False
 
-    @trace_rule
     def next_state(self, t):
         '''Returns the next state, given the current token. In the tbl
         language the options section for the table is optional. If present, it
@@ -129,13 +124,11 @@ class TblParser(object):
                 return s
         return None
 
-    @trace_rule
     def p_start(self, t):
         if t.type != 'START':
             raise InvalidTokenError(t, 'START')
         self._current_state = ('options', 'format')
 
-    @trace_rule
     def p_options(self, t):
         if t.type == 'SEMICOLON':
             self._current_state = ('format',)
@@ -150,7 +143,6 @@ class TblParser(object):
         else:
             self._options.add_children(ASTNode('option', TokenNode(t.value)))
 
-    @trace_rule
     def p_format(self, t):
         if t.type == 'FORMAT':
             # s means expanding options defined in prev cell.
@@ -192,7 +184,6 @@ class TblParser(object):
         self._ast[-nspan-1]._children[col]['span'] = nspan + 1
         self._spancount[col] = 0
 
-    @trace_rule
     def p_data(self, t):
         if t.type == 'END':
             self._current_state = ('start',)

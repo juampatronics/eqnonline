@@ -212,14 +212,12 @@ precedence = (
     )
 
 
-# @trace_rule
 def p_eqn(p):
     '''eqn : box
            | box eqn'''
     p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
-# @trace_rule
 def p_box_texr(p):
     'box : TEXT'
     p[0] = eqnnode('text', p[1])
@@ -261,7 +259,6 @@ def p_specialchar(p):
     p[0] = eqnnode('special_char', p[1])
 
 
-# @trace_rule
 def p_bracketed(p):
     'box : LCURLYB eqn RCURLYB'
     p[0] = eqnnode('bracketed', *p[2])
@@ -269,7 +266,6 @@ def p_bracketed(p):
 # Unless braces are used, eqn performs the operations in the order given below
 
 
-# @trace_rule
 def p_decoration(p):
     '''box : box HAT
            | box BAR
@@ -279,7 +275,6 @@ def p_decoration(p):
     p[0] = eqnnode(p[2], *p[1])
 
 
-# @trace_rule
 def p_txtfmt(p):
     '''box : ROMAN box
            | ITALIC box
@@ -294,7 +289,6 @@ default_size = 10
 current_size = default_size
 
 
-# @trace_rule
 def p_size(p):
     'box : SIZE TEXT box'
     if re.match('^[+-]?[0-9]+$', p[2]) == None:
@@ -303,40 +297,34 @@ def p_size(p):
     p[0] = eqnnode(p[1], p[2], *p[3])
 
 
-# @trace_rule
 def p_supbox(p):
     'supbox : SUP box %prec SUP'
     p[0] = p[2]
 
 
-# @trace_rule
 def p_box_subsup(p):
     '''box : box SUB box supbox'''
     tmp = eqnnode(p[2], *(p[1] + p[3]))
     p[0] = eqnnode('sup', *(tmp + p[4]))
 
 
-# @trace_rule
 def p_subbox(p):
     'subbox : SUB box %prec SUB'
     p[0] = p[2]
 
 
-# @trace_rule
 def p_box_supsub(p):
     '''box : box SUP box subbox'''
     tmp = eqnnode(p[2], *(p[1] + p[3]))
     p[0] = eqnnode('sub', *(tmp + p[4]))
 
 
-# @trace_rule
 def p_box_script(p):
     '''box : box SUB box
            | box SUP box'''
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_box_mathops(p):
     '''box : SUM
            | PROD
@@ -345,7 +333,6 @@ def p_box_mathops(p):
     p[0] = eqnnode('mathop', p[1])
 
 
-# @trace_rule
 def p_box_math(p):
     '''box : EQ
            | GE
@@ -357,26 +344,22 @@ def p_box_math(p):
     p[0] = eqnnode('mathop', p[1])
 
 
-# @trace_rule
 def p_box_fromto(p):
     '''box : box FROM box
            | box TO box'''
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_sqrt(p):
     '''box : SQRT box'''
     p[0] = eqnnode(p[1], *p[2])
 
 
-# @trace_rule
 def p_over(p):
     'box : box OVER box'
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_vectors(p):
     '''box : RPILE LCURLYB list RCURLYB
            | CPILE LCURLYB list RCURLYB
@@ -385,14 +368,12 @@ def p_vectors(p):
     p[0] = eqnnode(p[1], *p[3])
 
 
-# @trace_rule
 def p_list(p):
     '''list : eqn
             | list ABOVE eqn'''
     p[0] = eqnnode('above', *(p[1] + p[3])) if len(p) > 2 else p[1]
 
 
-# @trace_rule
 def p_brackets(p):
     '''box : LEFT TEXT eqn RIGHT TEXT
            | LEFT TEXT eqn'''
