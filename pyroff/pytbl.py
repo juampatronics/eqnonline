@@ -177,6 +177,7 @@ class TblParser(object):
             if 'p' in t.value:
                 attr['size'] = re.match('.*p([+-]?[0-9]+)', t.value).group(1)
             self._cell[-1]['font'] = attr
+
         if t.type == 'DOT' or t.type == 'ENDFMTLINE':
             if len(self._cell) > 0:
                 self._ast.append(ASTNode('cellfmtline', self._cell))
@@ -244,7 +245,7 @@ class TblParser(object):
 
 
 class TblTranslator(TranslatorFactory):
-    expected = ['tblformat', 'option', 'cellfmt', 'font', 'cellfmtline',
+    expected = ['tblformat', 'option', 'cellfmt', 'cellfmtline',
                 'tblrow', 'cell']
 
     def __init__(self):
