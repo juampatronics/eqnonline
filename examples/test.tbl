@@ -1,0 +1,8 @@
+.TS
+tab(|), allbox;
+cb li.
+one|two
+\^|three
+\^|four
+five|six
+.TE

@@ -98,6 +98,7 @@ class _Tbl2Html(object):
         if args[0] == '':
             # an empty cell correspond to the case where we want to span over
             # rows (\^).
+            self._col += 1
             return ''
         html = '<td'
         stylerow = self._row if self._row < len(self._cellfmt) else -1
