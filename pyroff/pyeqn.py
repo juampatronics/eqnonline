@@ -37,9 +37,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from ply import lex
 from ply import yacc
-from functools import wraps
 import re
 import inspect
+
 
 # Notice that here we do not use any token declaration of the form t_TOKEN =
 # r'...'. This is because of the way PLY orders them. This leads to ambiguities
@@ -48,7 +48,7 @@ import inspect
 # than just defining simple regexp while ensuring they are checked in a given
 # order.  We need to ensure that t_TEXT will be checked last.
 
-t_ignore = ' \t\^~'
+t_ANY_ignore = ' \t\^~'
 
 
 def t_newline(t):
@@ -60,7 +60,6 @@ reserved_words = (
     'DOT', 'SIZE', 'PARTIAL', 'INT', 'PROD', 'UNION', 'HALF', 'PRIME', 'INTER',
     'APPROX', 'TIMES', 'DEL', 'GRAD', 'INF', 'CDOT', 'ABOVE', 'ROMAN', 'BOLD',
     'ITALIC', 'SQRT', 'UNDER', 'FROM', 'RPILE', 'CPILE', 'LPILE', 'PILE',
-    'LEFT', 'RIGHT',
     )
 
 special_chars = [
@@ -70,6 +69,13 @@ special_chars = [
     'LAMBDA', 'PHI', 'PI', 'SIGMA', 'UPSILON', 'XI', 'xi', 'upsilon', 'chi',
     'sigma',
     ]
+
+
+# Some tokens are used with different meanings, which leads to ambiguity in
+# syntax. A way to solve this is to define distinguish tokens by its function.
+states = (
+    ('bracket', 'exclusive'),
+    )
 
 
 def gen_reserved_dict(words_list, lowercase=False):
@@ -87,8 +93,7 @@ def define_specials(words, lowercase=False):
 reserved = gen_reserved_dict(reserved_words, True)
 reserved.update(gen_reserved_dict(special_chars))
 
-# tokens = ['LCURLYB', 'RCURLYB', 'SPACE', 'TEXT']
-tokens = ['LCURLYB', 'RCURLYB', 'TEXT']
+tokens = ['LCURLYB', 'RCURLYB', 'LBRACKET', 'RBRACKET', 'LEFT', 'RIGHT', 'TEXT']
 
 
 def t_LCURLYB(t):
@@ -98,6 +103,20 @@ def t_LCURLYB(t):
 
 def t_RCURLYB(t):
     r'\}'
+    return t
+
+
+# notice that curly braces have two meanings: one as grouping elements, and as a
+# bracketing, graphical element.
+def t_bracket_RBRACKET(t):
+    r'[\]})>]'
+    t.lexer.pop_state()
+    return t
+
+
+def t_bracket_LBRACKET(t):
+    r'[[({<]'
+    t.lexer.pop_state()
     return t
 
 
@@ -155,15 +174,27 @@ def t_LSHIFT(t):
     return t
 
 
+def t_LEFT(t):
+    r'\bleft\b'
+    t.lexer.push_state('bracket')
+    return t
+
+
+def t_RIGHT(t):
+    r'\bright\b'
+    t.lexer.push_state('bracket')
+    return t
+
+
 def t_TEXT(t):
     r'("[^"]*"|[^\^~\s]+)'
     t.type = reserved.get(t.value, 'TEXT')
     return t
 
-tokens += math_symbols + list(reserved.values())
+tokens = math_symbols + list(reserved.values()) + tokens
 
 
-def t_error(t):
+def t_ANY_error(t):
     print("Illegal character '%s' at line %d" % (t.value[0],
                                                  t.lexer.lineno))
 
@@ -191,15 +222,6 @@ def eqnnode(ntype, *args):
     return (ntype, args)
 
 
-def trace_rule(rule):
-    @wraps(rule)
-    def wrapper(p):
-        print(rule.__name__ + ' >> ', p[1:])
-        rule(p)
-        print(rule.__name__ + ' << ', p[0])
-    return wrapper
-
-
 def p_error(p):
     print("Error while parsing : ", p)
 
@@ -212,17 +234,10 @@ precedence = (
     )
 
 
-# @trace_rule
 def p_eqn(p):
     '''eqn : box
            | box eqn'''
     p[0] = p[1] + p[2] if len(p) > 2 else p[1]
-
-
-# @trace_rule
-def p_box_texr(p):
-    'box : TEXT'
-    p[0] = eqnnode('text', p[1])
 
 
 def p_specialchar(p):
@@ -261,7 +276,6 @@ def p_specialchar(p):
     p[0] = eqnnode('special_char', p[1])
 
 
-# @trace_rule
 def p_bracketed(p):
     'box : LCURLYB eqn RCURLYB'
     p[0] = eqnnode('bracketed', *p[2])
@@ -269,7 +283,6 @@ def p_bracketed(p):
 # Unless braces are used, eqn performs the operations in the order given below
 
 
-# @trace_rule
 def p_decoration(p):
     '''box : box HAT
            | box BAR
@@ -279,7 +292,6 @@ def p_decoration(p):
     p[0] = eqnnode(p[2], *p[1])
 
 
-# @trace_rule
 def p_txtfmt(p):
     '''box : ROMAN box
            | ITALIC box
@@ -294,7 +306,6 @@ default_size = 10
 current_size = default_size
 
 
-# @trace_rule
 def p_size(p):
     'box : SIZE TEXT box'
     if re.match('^[+-]?[0-9]+$', p[2]) == None:
@@ -303,40 +314,34 @@ def p_size(p):
     p[0] = eqnnode(p[1], p[2], *p[3])
 
 
-# @trace_rule
 def p_supbox(p):
     'supbox : SUP box %prec SUP'
     p[0] = p[2]
 
 
-# @trace_rule
 def p_box_subsup(p):
     '''box : box SUB box supbox'''
     tmp = eqnnode(p[2], *(p[1] + p[3]))
     p[0] = eqnnode('sup', *(tmp + p[4]))
 
 
-# @trace_rule
 def p_subbox(p):
     'subbox : SUB box %prec SUB'
     p[0] = p[2]
 
 
-# @trace_rule
 def p_box_supsub(p):
     '''box : box SUP box subbox'''
     tmp = eqnnode(p[2], *(p[1] + p[3]))
     p[0] = eqnnode('sub', *(tmp + p[4]))
 
 
-# @trace_rule
 def p_box_script(p):
     '''box : box SUB box
            | box SUP box'''
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_box_mathops(p):
     '''box : SUM
            | PROD
@@ -345,7 +350,6 @@ def p_box_mathops(p):
     p[0] = eqnnode('mathop', p[1])
 
 
-# @trace_rule
 def p_box_math(p):
     '''box : EQ
            | GE
@@ -357,26 +361,22 @@ def p_box_math(p):
     p[0] = eqnnode('mathop', p[1])
 
 
-# @trace_rule
 def p_box_fromto(p):
     '''box : box FROM box
            | box TO box'''
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_sqrt(p):
     '''box : SQRT box'''
     p[0] = eqnnode(p[1], *p[2])
 
 
-# @trace_rule
 def p_over(p):
     'box : box OVER box'
     p[0] = eqnnode(p[2], *(p[1] + p[3]))
 
 
-# @trace_rule
 def p_vectors(p):
     '''box : RPILE LCURLYB list RCURLYB
            | CPILE LCURLYB list RCURLYB
@@ -385,21 +385,25 @@ def p_vectors(p):
     p[0] = eqnnode(p[1], *p[3])
 
 
-# @trace_rule
 def p_list(p):
     '''list : eqn
             | list ABOVE eqn'''
     p[0] = eqnnode('above', *(p[1] + p[3])) if len(p) > 2 else p[1]
 
 
-# @trace_rule
 def p_brackets(p):
-    '''box : LEFT TEXT eqn RIGHT TEXT
-           | LEFT TEXT eqn'''
+    '''box : LEFT LBRACKET eqn RIGHT RBRACKET
+           | LEFT LBRACKET eqn'''
     if len(p) > 4:
-        p[0] = eqnnode('brackets', *((p[2],) + p[3] + (p[5],)))
+        p[0] = eqnnode('brackets', *(eqnnode(p[1], p[2]) + p[3] +
+                                     eqnnode(p[4], p[5])))
     else:
-        p[0] = eqnnode('brackets', *((p[2],) + p[3]))
+        p[0] = eqnnode('brackets', *(eqnnode(p[1], p[2]) + p[3]))
+
+
+def p_box_texr(p):
+    'box : TEXT'
+    p[0] = eqnnode('text', p[1])
 
 # converter =========================================================
 
@@ -415,8 +419,7 @@ def process_ast(tree, callbacks):
         return None
     nodes = []
     for nodetype, args in pairwise(tree):
-        transformed = process_ast(args, callbacks) if len(args) > 1 \
-                                                   else args[0]
+        transformed = process_ast(args, callbacks) if len(args) > 1 else args[0]
         if nodetype not in callbacks:
             raise Exception('Undefined callback: ' + nodetype)
         if type(transformed) == tuple:
@@ -431,9 +434,8 @@ class EqnTranslator(object):
                 'under', 'tilde', 'roman', 'italic', 'bold', 'size', 'sub',
                 'sup', 'sum', 'prod', 'int', 'from', 'to', 'sqrt', 'over',
                 'above', 'pile', 'rpile', 'lpile', 'cpile', 'brackets',
-                'mathop']
+                'mathop', 'left', 'right']
 
-    @classmethod
     def custom(self, module, prefix=None):
         class Converter(object):
             def __init__(self, pymodule, prefix=None):
@@ -442,12 +444,12 @@ class EqnTranslator(object):
                 members = inspect.getmembers(pymodule)
                 if prefix is not None:
                     self._callbacks = dict((re.sub(prefix, '', name), handler)
-                        for name, handler in members
-                        if re.sub(prefix, '', name) in EqnTranslator.expected)
+                        for name, handler in members if re.sub(prefix, '', name)
+                                           in EqnTranslator.expected)
                 else:
                     self._callbacks = dict((name, handler)
-                                           for name, handler in members
-                                           if name in EqnTranslator.expected)
+                        for name, handler in members if name
+                                          in EqnTranslator.expected)
 
             def translate(self, s):
                 t = self._parser.parse(s)
@@ -455,7 +457,7 @@ class EqnTranslator(object):
 
             def translate_file(self, filename):
                 with open(filename, 'r') as f:
-                    return translate(self.parse(f.readlines()))
+                    return self.translate(self.parse(f.readlines()))
 
         return Converter(module, prefix)
 
@@ -463,7 +465,7 @@ class EqnTranslator(object):
 if __name__ == "__main__":
     import unittest as ut
     import cProfile
-    debug_mode = True
+    debug_mode = False
 
     # callbacks used to generate back the input, in order to perform some tests
     def binop(name):
@@ -494,7 +496,9 @@ if __name__ == "__main__":
             print(a)
 
     class TestExpressions(ut.TestCase):
+        # moved this out of setUp to speed up tests
         _parser = yacc.yacc(start='eqn', debug=debug_mode)
+
         def setUp(self):
             pass
 
@@ -512,9 +516,9 @@ if __name__ == "__main__":
                         ('sup', ('text', ('""',), 'text', ('2',)),
                          'text', ('He',)),
                         ('sup', ('sub', ('text', ('x',), 'text', ('i',)),
-                            'text', ('j',))),
+                                 'text', ('j',))),
                         ('sup', ('sub', ('text', ('y',), 'text', ('1=x',)),
-                            'text', ('2+',)), 'text', ('1',))]
+                                 'text', ('2+',)), 'text', ('1',))]
 
             self._runtests(examples, expected)
 
@@ -571,25 +575,49 @@ if __name__ == "__main__":
             self._runtests(examples, expected)
 
         def test_piles(self):
-            examples = ['rpile { 0 above 2x above 1 }']
+            examples = ['rpile { 0 above 2x above 1 }',
+                        'left [ rpile { 0 above 2x above 1 }',
+                        'left [ rpile { 0 above 2x above 1 } right ]']
             expected = [('rpile', ('above',
                                    ('above', ('text', ('0',), 'text', ('2x',)),
-                                    'text', ('1',))))]
-            self._runtests(examples, expected)
-
-        def test_brackets(self):
-            examples = ['left [ rpile { 0 above 2x above 1 }',
-                        'left [ rpile { 0 above 2x above 1 } right ]']
-            expected = [('brackets', ('[', 'rpile',
+                                    'text', ('1',)))),
+                        ('brackets', ('left', ('[',), 'rpile',
                                       ('above', ('above', ('text', ('0',),
                                                            'text', ('2x',)),
                                                  'text', ('1',))))),
-                        ('brackets', ('[', 'rpile',
+                        ('brackets', ('left', ('[',), 'rpile',
                                       ('above',
                                        ('above', ('text', ('0',),
                                                   'text', ('2x',)),
                                         'text', ('1',))),
-                                      ']'))]
+                                      'right', (']',)))
+                        ]
+            self._runtests(examples, expected)
+
+        def test_brackets(self):
+            examples = ['left ( x sup 2 over 2 right )',
+                        'left { x sup 2 over 2 right }',
+                        'left [ x sup 2 over 2 right ]',
+                        'left < x sup 2 over 2 right >']
+            expected = [
+                ('brackets', ('left', ('(',),
+                              'over', ('sup', ('text', ('x',), 'text', ('2',)),
+                              'text', ('2',)),
+                              'right', (')',))),
+                ('brackets', ('left', ('{',),
+                              'over', ('sup', ('text', ('x',), 'text', ('2',)),
+                              'text', ('2',)),
+                              'right', ('}',))),
+                ('brackets', ('left', ('[',),
+                              'over', ('sup', ('text', ('x',), 'text', ('2',)),
+                              'text', ('2',)),
+                              'right', (']',))),
+                ('brackets', ('left', ('<',),
+                              'over', ('sup', ('text', ('x',), 'text', ('2',)),
+                              'text', ('2',)),
+                              'right', ('>',)))
+                        ]
+
             self._runtests(examples, expected)
 
     class TestConversion(ut.TestCase):
