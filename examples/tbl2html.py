@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import sys
-import os
 import fileinput
 # you may as well add pyroff to PYTHONPATH
 sys.path.append('../')

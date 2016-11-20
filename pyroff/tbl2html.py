@@ -63,20 +63,20 @@ class _Tbl2Html(object):
         param = args[0]
         if param[0].lower() == 'c':
             self._laststyle = 'text-alignment : center;'
-            return self._laststyle
         elif param[0].lower() == 'r':
             self._laststyle = 'text-alignment : right;'
-            return self._laststyle
         elif param[0].lower() == 'l':
             self._laststyle = 'text-alignment : left;'
-            return self._laststyle
-        elif param[0].lower() == 's':
-            if not self._laststyle:
-                raise Exception('invalid format option for first cell: s')
-            return self._laststyle
 
-    def tbl_font(self, *args, meta=None):
-        return ''
+        if 'font' in meta:
+            font = meta['font']
+            if 'italic' in font:
+                self._laststyle += 'font-style: italic;'
+            if 'bold' in font:
+                self._laststyle += 'font-weight: bold;'
+            if 'size' in font:
+                self._laststyle += 'font-size: ' + font['size'] + 'px;'
+        return self._laststyle
 
     def tbl_cellfmtline(self, *args, meta=None):
         self._cellfmt.append(args)
@@ -98,13 +98,17 @@ class _Tbl2Html(object):
         if args[0] == '':
             # an empty cell correspond to the case where we want to span over
             # rows (\^).
+            self._col += 1
             return ''
         html = '<td'
-        if self._row < len(self._cellfmt):
-            if self._col < len(self._cellfmt[self._row]):
-                html += ' style="' + self._cellfmt[self._row][self._col] + '"'
-        if meta and 'span' in meta:
-            html += ' rowspan="' + str(meta['span']) + '"'
+        stylerow = self._row if self._row < len(self._cellfmt) else -1
+        if self._col < len(self._cellfmt[stylerow]):
+            html += ' style="' + self._cellfmt[stylerow][self._col] + '"'
+        if meta:
+            if 'span' in meta:
+                html += ' rowspan="' + str(meta['span']) + '"'
+            if 'font' in meta:
+                pass
         html += '>'
         self._col += 1
         return html + args[0] + '</td>' if len(args) == 1 \
@@ -135,9 +139,14 @@ if __name__ == "__main__":
             self._translator = Tbl2Html()
             return self
 
+        def _run_tests(self, expressions, expected):
+            for case, should in zip(expressions, expected):
+                result = self._translator.translate(case)
+                self.assertEqual(re.sub('\s+', '', result),
+                                 re.sub('\s+', '', should))
+
         def test_basiccases(self):
-            expressions = ['''
-                .TS
+            expressions = ['''.TS
                 tab (@);
                 c l.
                 1@User Console
@@ -161,7 +170,7 @@ if __name__ == "__main__":
                 4|High resolution display
                 .TE''', '''.TS
                 tab(|);
-                c _
+                c c
                 r r.
                 vertically centered|User Console
                 \^|Monochromatic graphics terminal
@@ -169,42 +178,89 @@ if __name__ == "__main__":
                 \^|High resolution display
                 .TE''']
 
-            expected = ['''<table style="border: none;">
-                        <tr><td style="text-alignment : center;">1</td>
-                        <td style="text-alignment : left;">User Console</td>
-                        </tr>
-                        <tr><td>2</td> <td>Monochromatic graphics terminal</td>
-                        </tr> <tr><td>3</td> <td>Touch screen</td></tr>
-                        <tr><td>4</td> <td>High resolution display</td></tr>
-                        </table>''',
-                        '''<table style="text-align: center;
-                                        border: 1px solid black;border: none;">
-                        <tr><td style="text-alignment : center;">1</td>
-                        <td style="text-alignment : left;">User Console</td>
-                        </tr> <tr><td>2</td>
-                        <td>Monochromatic graphics terminal</td></tr>
-                        <tr><td>3</td> <td>Touch screen</td></tr> <tr><td>4</td>
-                        <td>High resolution display</td></tr></table>''',
-                        '''<table style="border: none;">
-                        <tr><td style="text-alignment : center;">1</td>
-                        <td style="text-alignment : left;">User Console</td>
-                        </tr> <tr><td style="text-alignment : right;">2</td>
-                        <td style="text-alignment : right;">
-                        Monochromatic graphics terminal</td></tr> <tr><td>3</td>
-                        <td>Touch screen</td></tr> <tr><td>4</td>
-                        <td>High resolution display</td></tr></table>''',
-                        '''
-                        <table style="border: none;"><tr>
-                        <td style="text-alignment : center;" rowspan="4">
-                        vertically centered</td> <td>User Console</td></tr>
-                        <tr> <td style="text-alignment : right;">Monochromatic
-                        graphics terminal</td></tr> <tr> <td>Touch screen</td>
-                        </tr> <tr> <td>High resolution display</td></tr></table>
-                        ''']
+            expected = ['''<table style="border: none;"><tr>
+                <td style="text-alignment : center;">1</td>
+                <td style="text-alignment : left;">User Console</td></tr>
+                <tr><td style="text-alignment : center;">2</td>
+                <td style="text-alignment : left;">
+                Monochromatic graphics terminal</td></tr>
+                <tr><td style="text-alignment : center;">3</td>
+                <td style="text-alignment : left;">Touch screen</td></tr>
+                <tr><td style="text-alignment : center;">4</td>
+                <td style="text-alignment : left;">High resolution display
+                </td></tr></table>
+                ''',
+                '''<table style="text-align: center;border: 1px solid black;
+                border: none;"><tr><td style="text-alignment : center;">1</td>
+                <td style="text-alignment : left;">User Console</td></tr>
+                <tr><td style="text-alignment : center;">2</td>
+                <td style="text-alignment : left;">
+                Monochromatic graphics terminal</td></tr>
+                <tr><td style="text-alignment : center;">3</td>
+                <td style="text-alignment : left;">Touch screen</td></tr>
+                <tr><td style="text-alignment : center;">4</td>
+                <td style="text-alignment : left;">High resolution display</td>
+                </tr></table>
+                ''',
+                '''<table style="border: none;"><tr>
+                <td style="text-alignment : center;">1</td>
+                <td style="text-alignment : left;">User Console</td></tr>
+                <tr><td style="text-alignment : right;">2</td>
+                <td style="text-alignment : right;">
+                Monochromatic graphics terminal</td></tr>
+                <tr><td style="text-alignment : right;">3</td>
+                <td style="text-alignment : right;">Touch screen</td></tr>
+                <tr><td style="text-alignment : right;">4</td>
+                <td style="text-alignment : right;">
+                High resolution display</td></tr></table>
+                ''',
+                '''<table style="border: none;"><tr>
+                <td style="text-alignment : center;" rowspan="4">
+                vertically centered</td> <td style="text-alignment : center;">
+                User Console</td></tr> <tr>
+                <td style="text-alignment : right;">
+                Monochromatic graphics terminal</td></tr> <tr>
+                <td style="text-alignment : right;">Touch screen</td></tr>
+                <tr> <td style="text-alignment : right;">
+                High resolution display</td></tr></table>''']
 
-            for case, should in zip(expressions, expected):
-                result = self._translator.translate(case)
-                self.assertEqual(re.sub('\s+', '', result),
-                                 re.sub('\s+', '', should))
+            self._run_tests(expressions, expected)
+
+        def test_colexpansion(self):
+            expressions = ['''.TS
+                tab (@);
+                c l.
+                1@User Console
+                2@Monochromatic graphics terminal
+                3@Touch screen
+                4@High resolution display
+                .TE''']
+
+            expected = ['''<table style="border: none;">
+                <tr><td style="text-alignment : center;">1</td>
+                <td style="text-alignment : left;">User Console</td></tr>
+                <tr><td style="text-alignment : center;">2</td>
+                <td style="text-alignment : left;">Monochromatic graphics
+                terminal </td></tr>
+                <tr><td style="text-alignment : center;">3</td>
+                <td style="text-alignment : left;">Touch screen</td></tr>
+                <tr><td style="text-alignment : center;">4</td>
+                <td style="text-alignment : left;">High resolution display</td>
+                </tr></table>''']
+
+            self._run_tests(expressions, expected)
+
+        def test_font(self):
+            expressions = ['''.TS
+                tab(|);
+                cp12 rbi.
+                first|second
+                .TE''']
+            expected = ['''<table style="border: none;"><tr>
+                <td style="text-alignment : center;font-size: 12px;">first</td>
+                <td style="text-alignment : right;font-style: italic;
+                font-weight: bold;">second</td></tr></table>''']
+
+            self._run_tests(expressions, expected)
 
     ut.main()

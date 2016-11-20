@@ -240,6 +240,11 @@ def p_eqn(p):
     p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
+def p_box_texr(p):
+    'box : TEXT'
+    p[0] = eqnnode('text', p[1])
+
+
 def p_specialchar(p):
     '''box : alpha
            | beta
