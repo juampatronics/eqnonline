@@ -121,8 +121,8 @@ class ASTNode(object):
         '''
         if self._type not in callbacks and not ignore_missing:
             raise Exception('missing callback for node type ', self._type)
-        result =  [child.process_ast(callbacks, ignore_missing)
-                                     for child in self._children]
+        result = [child.process_ast(callbacks,
+                                    ignore_missing) for child in self._children]
         return callbacks[self._type](*filter(lambda x: x is not None, result),
                                      meta=self._options)
 
@@ -153,13 +153,14 @@ class TreeTransverser(object):
         if self._preproc:
             string = self._preproc()
         ast = self._parser.parse(s)
-        string +=  ' '.join(filter(lambda x: x is not None,
-                (node.process_ast(self._callbacks, ignore) for node in ast)))
+        for_each_node = (node.process_ast(self._callbacks, ignore)
+                         for node in ast)
+        string += ' '.join(filter(lambda x: x is not None, for_each_node))
         return string + self._postproc() if self._postproc else string
 
     def translate_file(self, filename):
         with open(filename, 'r') as f:
-            return translate(self.parse('\n'.join(f.readlines())))
+            return self.translate(self.parse('\n'.join(f.readlines())))
 
 
 class TranslatorFactory(object):
@@ -184,9 +185,9 @@ class TranslatorFactory(object):
             def __init__(self, pymodule, prefix, expected, parser):
                 super(Converter, self).__init__(parser)
                 members = inspect.getmembers(pymodule)
-                self._callbacks = dict((re.sub(prefix, '', name), handler)
-                    for name, handler in members
-                    if re.sub(prefix, '', name) in expected)
+                self._callbacks = dict((re.sub(prefix, '', name),
+                                        handler) for name, handler in members
+                                       if re.sub(prefix, '', name) in expected)
 
                 for name, handler in members:
                     if name == 'preproc':
@@ -203,8 +204,8 @@ class TranslatorFactory(object):
                 members = dir(instance)
                 self._callbacks = dict((re.sub(prefix, '', name),
                                         instance.__getattribute__(name))
-                    for name in members
-                    if re.sub(prefix, '', name) in expected)
+                                       for name in members
+                                       if re.sub(prefix, '', name) in expected)
 
                 if 'preproc' in members:
                     self._preproc = instance.__getattribute__('preproc')
@@ -238,7 +239,8 @@ if __name__ == "__main__":
             node.add_children(TokenNode('token'))
             self.assertEqual(node, ASTNode('ast', TokenNode('token')))
             node.add_children(TokenNode('2nd_token'))
-            self.assertEqual(node,
-                ASTNode('ast', [TokenNode('token'), TokenNode('2nd_token')]))
+            self.assertEqual(node, ASTNode('ast',
+                                           [TokenNode('token'),
+                                            TokenNode('2nd_token')]))
 
     ut.main()
