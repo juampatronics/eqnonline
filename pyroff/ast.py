@@ -159,7 +159,7 @@ class TreeTransverser(object):
 
     def translate_file(self, filename):
         with open(filename, 'r') as f:
-            return translate(self.parse(f.readlines()))
+            return translate(self.parse('\n'.join(f.readlines())))
 
 
 class TranslatorFactory(object):
