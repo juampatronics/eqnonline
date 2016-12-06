@@ -112,6 +112,9 @@ class ASTNode(object):
     def is_empty(self):
         return len(self._children) == 0
 
+    def type(self):
+        return self._type
+
     def process_ast(self, callbacks, ignore_missing=False):
         '''Processes the AST tree beginning at the current node.  With the
         parameter ignore_missing the choose not to throw an exception when
@@ -120,10 +123,10 @@ class ASTNode(object):
         only.
         '''
         if self._type not in callbacks and not ignore_missing:
-            raise Exception('missing callback for node type ', self._type)
-        result =  [child.process_ast(callbacks, ignore_missing)
-                                     for child in self._children]
-        return callbacks[self._type](*filter(lambda x: x is not None, result),
+            raise Exception('missing callback for node type ', self.type())
+        result = [child.process_ast(callbacks,
+                                    ignore_missing) for child in self._children]
+        return callbacks[self.type()](*filter(lambda x: x is not None, result),
                                      meta=self._options)
 
 
@@ -142,24 +145,32 @@ class TokenNode(ASTNode):
 
 
 class TreeTransverser(object):
-    'This class is ment for internal use only.'
+    'This class is meant for internal use only.'
     def __init__(self, parser):
         self._parser = parser
         self._preproc = None
         self._postproc = None
 
     def translate(self, s, ignore=False):
-        string = ''
+        result = []
         if self._preproc:
-            string = self._preproc()
+            value = self._preproc()
+            result.extend(value if type(value) == list else [post])
+
         ast = self._parser.parse(s)
-        string +=  ' '.join(filter(lambda x: x is not None,
-                (node.process_ast(self._callbacks, ignore) for node in ast)))
-        return string + self._postproc() if self._postproc else string
+        result.extend([node.process_ast(self._callbacks, ignore)
+                       for node in ast._children])
+
+        if self._postproc:
+            post = self._postproc()
+            result.extend(post if type(post) == list else [post])
+
+        return self._callbacks[ast.type()](result)
 
     def translate_file(self, filename):
         with open(filename, 'r') as f:
-            return translate(self.parse(f.readlines()))
+            ast = self.parse(f.read())
+            return self.translate(ast)
 
 
 class TranslatorFactory(object):
@@ -184,9 +195,9 @@ class TranslatorFactory(object):
             def __init__(self, pymodule, prefix, expected, parser):
                 super(Converter, self).__init__(parser)
                 members = inspect.getmembers(pymodule)
-                self._callbacks = dict((re.sub(prefix, '', name), handler)
-                    for name, handler in members
-                    if re.sub(prefix, '', name) in expected)
+                self._callbacks = dict((re.sub(prefix, '', name),
+                                        handler) for name, handler in members
+                                       if re.sub(prefix, '', name) in expected)
 
                 for name, handler in members:
                     if name == 'preproc':
@@ -203,8 +214,8 @@ class TranslatorFactory(object):
                 members = dir(instance)
                 self._callbacks = dict((re.sub(prefix, '', name),
                                         instance.__getattribute__(name))
-                    for name in members
-                    if re.sub(prefix, '', name) in expected)
+                                       for name in members
+                                       if re.sub(prefix, '', name) in expected)
 
                 if 'preproc' in members:
                     self._preproc = instance.__getattribute__('preproc')
@@ -238,7 +249,8 @@ if __name__ == "__main__":
             node.add_children(TokenNode('token'))
             self.assertEqual(node, ASTNode('ast', TokenNode('token')))
             node.add_children(TokenNode('2nd_token'))
-            self.assertEqual(node,
-                ASTNode('ast', [TokenNode('token'), TokenNode('2nd_token')]))
+            self.assertEqual(node, ASTNode('ast',
+                                           [TokenNode('token'),
+                                            TokenNode('2nd_token')]))
 
     ut.main()
