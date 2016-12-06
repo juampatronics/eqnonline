@@ -112,6 +112,9 @@ class ASTNode(object):
     def is_empty(self):
         return len(self._children) == 0
 
+    def type(self):
+        return self._type
+
     def process_ast(self, callbacks, ignore_missing=False):
         '''Processes the AST tree beginning at the current node.  With the
         parameter ignore_missing the choose not to throw an exception when
@@ -120,11 +123,11 @@ class ASTNode(object):
         only.
         '''
         if self._type not in callbacks and not ignore_missing:
-            raise Exception('missing callback for node type ', self._type)
+            raise Exception('missing callback for node type ', self.type())
         result = [child.process_ast(callbacks,
                                     ignore_missing) for child in self._children]
-        return callbacks[self._type](*filter(lambda x: x is not None, result),
-                                     meta=self._options)
+        return callbacks[self.type()](*filter(lambda x: x is not None, result),
+                                      meta=self._options)
 
 
 class TokenNode(ASTNode):
@@ -142,25 +145,32 @@ class TokenNode(ASTNode):
 
 
 class TreeTransverser(object):
-    'This class is ment for internal use only.'
+    'This class is meant for internal use only.'
     def __init__(self, parser):
         self._parser = parser
         self._preproc = None
         self._postproc = None
 
     def translate(self, s, ignore=False):
-        string = ''
+        result = []
         if self._preproc:
-            string = self._preproc()
+            value = self._preproc()
+            result.extend(value if type(value) == list else [post])
+
         ast = self._parser.parse(s)
-        for_each_node = (node.process_ast(self._callbacks, ignore)
-                         for node in ast)
-        string += ' '.join(filter(lambda x: x is not None, for_each_node))
-        return string + self._postproc() if self._postproc else string
+        result.extend([node.process_ast(self._callbacks, ignore)
+                       for node in ast._children])
+
+        if self._postproc:
+            post = self._postproc()
+            result.extend(post if type(post) == list else [post])
+
+        return self._callbacks[ast.type()](result)
 
     def translate_file(self, filename):
         with open(filename, 'r') as f:
-            return self.translate(self.parse('\n'.join(f.readlines())))
+            ast = self.parse(f.read())
+            return self.translate(ast)
 
 
 class TranslatorFactory(object):
