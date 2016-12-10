@@ -155,7 +155,7 @@ class TreeTransverser(object):
         result = []
         if self._preproc:
             value = self._preproc()
-            result.extend(value if type(value) == list else [post])
+            result.extend(value if type(value) == list else [value])
 
         ast = self._parser.parse(s)
         result.extend([node.process_ast(self._callbacks, ignore)
