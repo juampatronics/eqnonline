@@ -406,10 +406,6 @@ def p_brackets(p):
         p[0] = eqnnode('brackets', *(eqnnode(p[1], p[2]) + p[3]))
 
 
-def p_box_texr(p):
-    'box : TEXT'
-    p[0] = eqnnode('text', p[1])
-
 # converter =========================================================
 
 
@@ -453,8 +449,8 @@ class EqnTranslator(object):
                                            in EqnTranslator.expected)
                 else:
                     self._callbacks = dict((name, handler)
-                        for name, handler in members if name
-                                          in EqnTranslator.expected)
+                                           for name, handler in members if name
+                                           in EqnTranslator.expected)
 
             def translate(self, s):
                 t = self._parser.parse(s)
