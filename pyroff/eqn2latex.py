@@ -117,7 +117,7 @@ def eqn_brackets(*args):
 
 class Eqn2Latex(object):
     def __init__(self):
-        self._translator = EqnTranslator.custom(sys.modules[__name__], 'eqn_')
+        self._translator = EqnTranslator().custom(sys.modules[__name__], 'eqn_')
 
     def translate(self, s):
         return self._translator.translate(s)
