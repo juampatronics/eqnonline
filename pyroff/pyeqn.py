@@ -67,7 +67,7 @@ special_chars = [
     'rho', 'mu', 'nu', 'lambda', 'alpha', 'beta', 'gamma', 'omega', 'tau',
     'theta', 'CHI', 'delta', 'kappa', 'eta', 'iota', 'omicron', 'psi', 'zeta',
     'LAMBDA', 'PHI', 'PI', 'SIGMA', 'UPSILON', 'XI', 'xi', 'upsilon', 'chi',
-    'sigma',
+    'sigma', 'inf',
     ]
 
 
@@ -125,7 +125,7 @@ def t_SPACE(t):
     return t
 
 
-math_symbols = ['GE', 'LE', 'EQ', 'NOTEQ', 'RARROW', 'LARROW', 'DOTS',
+math_symbols = ['GE', 'LE', 'EQ', 'NOTEQ', 'LARROW', 'DOTS',
                 'RSHIFT', 'LSHIFT']
 
 
@@ -149,7 +149,7 @@ def t_NOTEQ(t):
     return t
 
 
-def t_RARROW(t):
+def t_LIM(t):
     r'->'
     return t
 
@@ -277,7 +277,8 @@ def p_specialchar(p):
            | UPSILON
            | XI
            | PSI
-           | omega'''
+           | omega
+           | inf'''
     p[0] = eqnnode('special_char', p[1])
 
 
@@ -445,7 +446,8 @@ class EqnTranslator(object):
                 members = inspect.getmembers(pymodule)
                 if prefix is not None:
                     self._callbacks = dict((re.sub(prefix, '', name), handler)
-                        for name, handler in members if re.sub(prefix, '', name)
+                                           for name, handler in members
+                                           if re.sub(prefix, '', name)
                                            in EqnTranslator.expected)
                 else:
                     self._callbacks = dict((name, handler)
@@ -454,7 +456,7 @@ class EqnTranslator(object):
 
             def translate(self, s):
                 t = self._parser.parse(s)
-                return ''.join(process_ast(t, self._callbacks))
+                return ' '.join(process_ast(t, self._callbacks))
 
             def translate_file(self, filename):
                 with open(filename, 'r') as f:
@@ -560,11 +562,12 @@ if __name__ == "__main__":
             examples = ['sum from { i=0 } to N-1 x sub i',
                         'x == y < z > u']
             expected = [('to', ('from', ('mathop', ('sum',),
-                'bracketed', ('text', ('i=0',))), 'text', ('N-1',)),
-                'sub', ('text', ('x',), 'text', ('i',))),
-                ('text', ('x',), 'mathop', ('==',), 'text', ('y',),
-                    'text', ('<',), 'text', ('z',), 'text', ('>',),
-                    'text', ('u',))]
+                                         'bracketed', ('text', ('i=0',))),
+                                'text', ('N-1',)),
+                         'sub', ('text', ('x',), 'text', ('i',))),
+                        ('text', ('x',), 'mathop', ('==',), 'text', ('y',),
+                         'text', ('<',), 'text', ('z',), 'text', ('>',),
+                         'text', ('u',))]
             self._runtests(examples, expected)
 
         def test_size(self):
@@ -603,22 +606,29 @@ if __name__ == "__main__":
             expected = [
                 ('brackets', ('left', ('(',),
                               'over', ('sup', ('text', ('x',), 'text', ('2',)),
-                              'text', ('2',)),
+                                       'text', ('2',)),
                               'right', (')',))),
                 ('brackets', ('left', ('{',),
                               'over', ('sup', ('text', ('x',), 'text', ('2',)),
-                              'text', ('2',)),
+                                       'text', ('2',)),
                               'right', ('}',))),
                 ('brackets', ('left', ('[',),
                               'over', ('sup', ('text', ('x',), 'text', ('2',)),
-                              'text', ('2',)),
+                                       'text', ('2',)),
                               'right', (']',))),
                 ('brackets', ('left', ('<',),
                               'over', ('sup', ('text', ('x',), 'text', ('2',)),
-                              'text', ('2',)),
+                                       'text', ('2',)),
                               'right', ('>',)))
                         ]
 
+            self._runtests(examples, expected)
+
+        def test_symbols(self):
+            examples = ['x -> y', 'x -> inf']
+            expected = [('text', ('x',), 'mathop', ('->',), 'text', ('y',)),
+                        ('text', ('x',), 'mathop', ('->',),
+                         'special_char', ('inf',))]
             self._runtests(examples, expected)
 
     class TestConversion(ut.TestCase):

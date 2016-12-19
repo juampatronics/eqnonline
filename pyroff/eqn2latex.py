@@ -37,6 +37,21 @@ import sys
 import re
 
 
+symbols_map = {
+    '>=': '\\geq',
+    '<=': '\\leq',
+    '<<': '\\ll',
+    '>>': '\\gg',
+    'inter': '\\cap',
+    'union': '\\cup',
+    '->': '\\to',
+    'grad': '\\nabla',
+    '!=': '\\ne',
+    '==': '\\equiv',
+    'inf': '\\infty',
+    }
+
+
 def escape_chars(s, chars=r'\\'):
     'escape control characters'
     s = re.sub(r'([' + ''.join(chars) + '])', r'\\\1', s)
@@ -44,7 +59,7 @@ def escape_chars(s, chars=r'\\'):
 
 
 def eqn_text(*args):
-    return args[0]
+    return ' '.join(args)
 
 
 def eqn_bracketed(*args):
@@ -66,6 +81,8 @@ def eqn_over(*args):
 def eqn_special_char(char):
     if char == char.upper():
         return '\\' + char[0].upper() + char[1:]
+    if char in symbols_map:
+        return symbols_map[char]
     return '\\' + char
 
 
@@ -91,20 +108,6 @@ def eqn_left(*args):
 
 def eqn_right(*args):
     return '\\right' + args[0]
-
-
-symbols_map = {
-    '>=': '\\geq',
-    '<=': '\\leq',
-    '<<': '\\ll',
-    '>>': '\\gg',
-    'inter': '\\cap',
-    'union': '\\cup',
-    '->': '\\to',
-    'grad': '\\nabla',
-    '!=': '\\ne',
-    '==': '\\equiv',
-    }
 
 
 def eqn_mathop(*args):
@@ -140,9 +143,8 @@ if __name__ == "__main__":
                 self.assertEqual(result, expected)
 
         def test_scripts(self):
-            return
             cases = [('x sup 2', r'x^{2}'),
-                     ('sum from n=1 to N x sub i', r'\sum_{n=1}^{N}x_{i}'),
+                     ('sum from n=1 to N x sub i', r'\sum_{n=1}^{N} x_{i}'),
                      ('x over 2', r'\frac{x}{2}'),
                      ('{ a sup 2 } over { x+1 }', r'\frac{a^{2}}{x+1}'),
                      ('{ a sup { x+y } } over { x+1 }',
@@ -151,11 +153,10 @@ if __name__ == "__main__":
                      ('pi sub { sqrt 2 }', r'\pi_{\sqrt{2}}'),
                      ('x sup 2 sub 3', 'x^{2}_{3}'),
                      ('prod from i=0 to N sum from k=0 to K x sub k sup i',
-                      r'\prod_{i=0}^{N}\sum_{k=0}^{K}x_{k}^{i}')]
+                      r'\prod_{i=0}^{N} \sum_{k=0}^{K} x_{k}^{i}')]
             self._runtests(cases)
 
         def test_controlchars(self):
-            return
             cases = [(r'\sum', r'\\sum'),
                      (r'\hat{x_{\lambda}}', r'\\hat{x_{\\lambda}}'),
                      (r'\hat{x_{\lambda}}', r'\\hat{x_{\\lambda}}'),
@@ -163,6 +164,12 @@ if __name__ == "__main__":
             for case, expected in cases:
                 self.assertEqual(escape_chars(case, r'\\&'), expected)
                 self.assertEqual(escape_chars(case, [r'\\', '&']), expected)
+
+        def test_symbols(self):
+            cases = [('x -> inf', r'x \to \infty'),
+                     ('x != y', r'x \ne y')]
+
+            self._runtests(cases)
 
         def test_bracketed(self):
             cases = [(r'left ( x sup 2 over 2  right )',
