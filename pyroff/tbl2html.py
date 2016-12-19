@@ -58,6 +58,7 @@ class _Tbl2Html(object):
             self._border = True
         elif args[0] == 'box':
             self._style += 'border: 1px solid black;'
+        return ''
 
     def tbl_cellfmt(self, *args, meta=None):
         param = args[0]
@@ -80,6 +81,7 @@ class _Tbl2Html(object):
 
     def tbl_cellfmtline(self, *args, meta=None):
         self._cellfmt.append(args)
+        return ''
 
     def tbl_tblrow(self, *args, meta=None):
         html = ''
@@ -113,6 +115,9 @@ class _Tbl2Html(object):
         self._col += 1
         return html + args[0] + '</td>' if len(args) == 1 \
             else html + ' '.join(args) + '</td>'
+
+    def tbl_tbl(self, *args, meta=None):
+        return ''.join(*args)
 
     def postproc(self):
         self._init_params()

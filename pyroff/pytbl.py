@@ -230,14 +230,14 @@ class TblParser(object):
             if state is None:
                 raise InvalidTokenError(tok)
             self.actions[state](tok)
-        ast = self._ast
+        ast = ASTNode('tbl', self._ast)
         self._reset()
         return ast
 
 
 class TblTranslator(TranslatorFactory):
     expected = ['tblformat', 'option', 'cellfmt', 'cellfmtline',
-                'tblrow', 'cell']
+                'tblrow', 'cell', 'tbl']
 
     def __init__(self):
         super(TblTranslator, self).__init__(TblParser(), 'tbl_')
@@ -293,87 +293,90 @@ if __name__ == "__main__":
             expected = [
                 [ASTNode('tblformat', ASTNode('option', [TokenNode('@')])),
                  ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('c')),
-                      ASTNode('cellfmt', TokenNode('l'))]),
+                         [ASTNode('cellfmt', TokenNode('c')),
+                          ASTNode('cellfmt', TokenNode('l'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('1')),
-                      ASTNode('cell', TokenNode('User Console'))]),
+                         [ASTNode('cell', TokenNode('1')),
+                          ASTNode('cell', TokenNode('User Console'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('2')),
-                      ASTNode('cell',
-                          TokenNode('Monochromatic graphics terminal'))]),
+                         [ASTNode('cell', TokenNode('2')),
+                          ASTNode('cell',
+                                  TokenNode(
+                                      'Monochromatic graphics terminal'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('3')),
-                      ASTNode('cell', TokenNode('Touch screen'))]),
+                         [ASTNode('cell', TokenNode('3')),
+                          ASTNode('cell', TokenNode('Touch screen'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('4')),
-                      ASTNode('cell',
-                          TokenNode('High resolution display'))])],
+                         [ASTNode('cell', TokenNode('4')),
+                          ASTNode('cell', TokenNode(
+                              'High resolution display'))])],
 
                 [ASTNode('tblformat',
-                     [ASTNode('option', [TokenNode('center')]),
-                      ASTNode('option', [TokenNode('box')]),
-                      ASTNode('option', [TokenNode('%')])]),
+                         [ASTNode('option',
+                                  [TokenNode('center')]),
+                          ASTNode('option', [TokenNode('box')]),
+                          ASTNode('option', [TokenNode('%')])]),
                  ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('c')),
-                      ASTNode('cellfmt', TokenNode('l'))]),
+                         [ASTNode('cellfmt', TokenNode('c')),
+                          ASTNode('cellfmt', TokenNode('l'))]),
+                 ASTNode('tblrow', [ASTNode('cell', TokenNode('1')),
+                                    ASTNode('cell', TokenNode(
+                                        'User Console'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('1')),
-                      ASTNode('cell', TokenNode('User Console'))]),
+                         [ASTNode('cell', TokenNode('2')),
+                          ASTNode('cell',
+                                  TokenNode(
+                                      'Monochromatic graphics terminal'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('2')),
-                      ASTNode('cell',
-                          TokenNode('Monochromatic graphics terminal'))]),
-                 ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('3')),
-                      ASTNode('cell', TokenNode('Touch screen'))]),
-                 ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('4')),
-                     ASTNode('cell', TokenNode('High resolution display'))])],
+                         [ASTNode('cell', TokenNode('3')),
+                          ASTNode('cell', TokenNode('Touch screen'))]),
+                 ASTNode('tblrow', [ASTNode('cell', TokenNode('4')),
+                                    ASTNode('cell',
+                                            TokenNode(
+                                                'High resolution display'))])],
 
                 [ASTNode('tblformat', ASTNode('option', [TokenNode('|')])),
                  ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('c')),
-                      ASTNode('cellfmt', TokenNode('l'))]),
+                         [ASTNode('cellfmt', TokenNode('c')),
+                          ASTNode('cellfmt', TokenNode('l'))]),
                  ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('r')),
-                      ASTNode('cellfmt', TokenNode('r'))]),
+                         [ASTNode('cellfmt', TokenNode('r')),
+                          ASTNode('cellfmt', TokenNode('r'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('1')),
-                      ASTNode('cell', TokenNode('User Console'))]),
+                         [ASTNode('cell', TokenNode('1')),
+                          ASTNode('cell', TokenNode('User Console'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('2')),
-                         ASTNode('cell',
-                             TokenNode('Monochromatic graphics terminal'))]),
+                         [ASTNode('cell', TokenNode('2')),
+                          ASTNode('cell', TokenNode(
+                              'Monochromatic graphics terminal'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('3')),
-                      ASTNode('cell', TokenNode('Touch screen'))]),
+                         [ASTNode('cell', TokenNode('3')),
+                          ASTNode('cell', TokenNode('Touch screen'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('4')),
-                      ASTNode('cell',
-                          TokenNode('High resolution display'))])],
+                         [ASTNode('cell', TokenNode('4')),
+                          ASTNode('cell', TokenNode(
+                              'High resolution display'))])],
 
                 [ASTNode('tblformat', ASTNode('option', [TokenNode('|')])),
+                 ASTNode('cellfmtline', [ASTNode('cellfmt', TokenNode('c')),
+                                         ASTNode('cellfmt', TokenNode('_'))]),
                  ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('c')),
-                      ASTNode('cellfmt', TokenNode('_'))]),
-                 ASTNode('cellfmtline',
-                     [ASTNode('cellfmt', TokenNode('r')),
-                      ASTNode('cellfmt', TokenNode('r'))]),
+                         [ASTNode('cellfmt', TokenNode('r')),
+                          ASTNode('cellfmt', TokenNode('r'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('vertically centered')),
-                      ASTNode('cell', TokenNode('User Console'))]),
+                         [ASTNode('cell', TokenNode('vertically centered')),
+                          ASTNode('cell', TokenNode('User Console'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('')),
-                      ASTNode('cell',
-                          TokenNode('Monochromatic graphics terminal'))]),
+                         [ASTNode('cell', TokenNode('')),
+                          ASTNode('cell', TokenNode(
+                              'Monochromatic graphics terminal'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('')),
-                      ASTNode('cell', TokenNode('Touch screen'))]),
+                         [ASTNode('cell', TokenNode('')),
+                          ASTNode('cell', TokenNode('Touch screen'))]),
                  ASTNode('tblrow',
-                     [ASTNode('cell', TokenNode('')),
-                         ASTNode('cell',
-                             TokenNode('High resolution display'))]),
+                         [ASTNode('cell', TokenNode('')),
+                          ASTNode('cell', TokenNode(
+                              'High resolution display'))]),
                  ASTNode('tblrow', ASTNode('cell', TokenNode('=')))]
             ]
 
@@ -438,14 +441,14 @@ if __name__ == "__main__":
                 .TE''']
 
             expected = [(1, 0, {'bold': True}), (1, 1, {'italic': True}),
-                    (1, 2, {'italic': True, 'bold': True}),
-                    (2, 0, {'bold': True, 'size': '12'}),
-                    (2, 1, {'italic': True}),
-                    (2, 2, {'italic': True, 'bold': True})]
+                        (1, 2, {'italic': True, 'bold': True}),
+                        (2, 0, {'bold': True, 'size': '12'}),
+                        (2, 1, {'italic': True}),
+                        (2, 2, {'italic': True, 'bold': True})]
 
             for expr, values in zip(expressions, expected):
                 ast = self.parser.parse(expr)
                 self.assertEqual(values[2],
-                        ast[values[0]]._children[values[1]]['font'])
+                                 ast[values[0]]._children[values[1]]['font'])
 
     ut.main()
