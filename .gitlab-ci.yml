@@ -1,6 +1,7 @@
 image: python:3.3
 
 before_script:
+  - pip3 install ply
   - export PYTHONPATH=$PWD:$PYTHONPATH
 
 stages:
