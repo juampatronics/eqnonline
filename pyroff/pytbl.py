@@ -37,7 +37,6 @@ import re
 from functools import wraps
 from .tbllexer import TblLexer
 from .ast import TranslatorFactory, ASTNode, TokenNode
-from pdb import set_trace
 
 
 class ParserError(Exception):
@@ -58,16 +57,6 @@ class InvalidTokenError(ParserError):
         else:
             return self.msg + ': got ' + self.token + ', but expected : ' +\
                    self.expected
-
-
-def trace_rule(rule):
-    @wraps(rule)
-    def wrapper(self, p):
-        print('>>> ' + rule.__name__ + ' : ', p)
-        result = rule(self, p)
-        print('<<< ', result)
-        return result
-    return wrapper
 
 
 class TblParser(object):
@@ -304,8 +293,9 @@ if __name__ == "__main__":
                                   ASTNode('cell', TokenNode('User Console'))]),
                          ASTNode('tblrow', [ASTNode('cell', TokenNode('2')),
                                             ASTNode('cell',
-                                                    TokenNode(
-                                                        'Monochromatic graphics terminal'))]),
+                                                    TokenNode('Monochromatic' +
+                                                              ' graphics ' +
+                                                              'terminal'))]),
                          ASTNode('tblrow',
                                  [ASTNode('cell', TokenNode('3')),
                                   ASTNode('cell', TokenNode('Touch screen'))]),
@@ -314,76 +304,77 @@ if __name__ == "__main__":
                                   ASTNode('cell', TokenNode(
                                       'High resolution display'))])]),
 
-                ASTNode('tbl', [ASTNode('tblformat',
-                         [ASTNode('option',
-                                  [TokenNode('center')]),
-                          ASTNode('option', [TokenNode('box')]),
-                          ASTNode('option', [TokenNode('%')])]),
-                 ASTNode('cellfmtline',
-                         [ASTNode('cellfmt', TokenNode('c')),
-                          ASTNode('cellfmt', TokenNode('l'))]),
-                 ASTNode('tblrow', [ASTNode('cell', TokenNode('1')),
-                                    ASTNode('cell', TokenNode(
-                                        'User Console'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('2')),
-                          ASTNode('cell',
-                                  TokenNode(
-                                      'Monochromatic graphics terminal'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('3')),
-                          ASTNode('cell', TokenNode('Touch screen'))]),
-                 ASTNode('tblrow', [ASTNode('cell', TokenNode('4')),
-                                    ASTNode('cell',
-                                            TokenNode(
-                                                'High resolution display'))])]),
-
                 ASTNode('tbl',
-                        [ASTNode('tblformat', ASTNode('option', [TokenNode('|')])),
-                 ASTNode('cellfmtline',
-                         [ASTNode('cellfmt', TokenNode('c')),
-                          ASTNode('cellfmt', TokenNode('l'))]),
-                 ASTNode('cellfmtline',
-                         [ASTNode('cellfmt', TokenNode('r')),
-                          ASTNode('cellfmt', TokenNode('r'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('1')),
-                          ASTNode('cell', TokenNode('User Console'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('2')),
-                          ASTNode('cell', TokenNode(
-                              'Monochromatic graphics terminal'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('3')),
-                          ASTNode('cell', TokenNode('Touch screen'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('4')),
-                          ASTNode('cell', TokenNode(
-                              'High resolution display'))])]),
+                        [ASTNode('tblformat',
+                                 [ASTNode('option', [TokenNode('center')]),
+                                  ASTNode('option', [TokenNode('box')]),
+                                  ASTNode('option', [TokenNode('%')])]),
+                         ASTNode('cellfmtline',
+                                 [ASTNode('cellfmt', TokenNode('c')),
+                                  ASTNode('cellfmt', TokenNode('l'))]),
+                         ASTNode('tblrow', [ASTNode('cell', TokenNode('1')),
+                                            ASTNode('cell', TokenNode(
+                                                'User Console'))]),
+                         ASTNode('tblrow', [ASTNode('cell', TokenNode('2')),
+                                            ASTNode('cell', TokenNode(
+                                                'Monochromatic graphics ' +
+                                                'terminal'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('3')),
+                                  ASTNode('cell', TokenNode('Touch screen'))]),
+                         ASTNode('tblrow', [ASTNode('cell', TokenNode('4')),
+                                            ASTNode('cell', TokenNode(
+                                                'High resolution display'))])]),
 
                 ASTNode('tbl',
                         [ASTNode('tblformat',
                                  ASTNode('option', [TokenNode('|')])),
-                 ASTNode('cellfmtline', [ASTNode('cellfmt', TokenNode('c')),
-                                         ASTNode('cellfmt', TokenNode('_'))]),
-                 ASTNode('cellfmtline',
-                         [ASTNode('cellfmt', TokenNode('r')),
-                          ASTNode('cellfmt', TokenNode('r'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('vertically centered')),
-                          ASTNode('cell', TokenNode('User Console'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('')),
-                          ASTNode('cell', TokenNode(
-                              'Monochromatic graphics terminal'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('')),
-                          ASTNode('cell', TokenNode('Touch screen'))]),
-                 ASTNode('tblrow',
-                         [ASTNode('cell', TokenNode('')),
-                          ASTNode('cell', TokenNode(
-                              'High resolution display'))]),
-                 ASTNode('tblrow', ASTNode('cell', TokenNode('=')))])
+                         ASTNode('cellfmtline',
+                                 [ASTNode('cellfmt', TokenNode('c')),
+                                  ASTNode('cellfmt', TokenNode('l'))]),
+                         ASTNode('cellfmtline',
+                                 [ASTNode('cellfmt', TokenNode('r')),
+                                  ASTNode('cellfmt', TokenNode('r'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('1')),
+                                  ASTNode('cell', TokenNode('User Console'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('2')),
+                                  ASTNode('cell', TokenNode(
+                                      'Monochromatic graphics terminal'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('3')),
+                                  ASTNode('cell', TokenNode('Touch screen'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('4')),
+                                  ASTNode('cell', TokenNode(
+                                      'High resolution display'))])]),
+
+                ASTNode('tbl',
+                        [ASTNode('tblformat',
+                                 ASTNode('option', [TokenNode('|')])),
+                         ASTNode('cellfmtline',
+                                 [ASTNode('cellfmt', TokenNode('c')),
+                                  ASTNode('cellfmt', TokenNode('_'))]),
+                         ASTNode('cellfmtline',
+                                 [ASTNode('cellfmt', TokenNode('r')),
+                                  ASTNode('cellfmt', TokenNode('r'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode(
+                                     'vertically centered')),
+                                  ASTNode('cell', TokenNode('User Console'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('')),
+                                  ASTNode('cell', TokenNode(
+                                      'Monochromatic graphics terminal'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('')),
+                                  ASTNode('cell', TokenNode('Touch screen'))]),
+                         ASTNode('tblrow',
+                                 [ASTNode('cell', TokenNode('')),
+                                  ASTNode('cell', TokenNode(
+                                      'High resolution display'))]),
+                         ASTNode('tblrow', ASTNode('cell', TokenNode('=')))])
             ]
 
             self._test_cases(expressions, expected)
@@ -434,7 +425,8 @@ if __name__ == "__main__":
 
             for expr, span in zip(expressions, expected):
                 ast = self.parser.parse(expr)
-                self.assertEqual(span[1], ast._children[1]._children[span[0]]['colspan'])
+                self.assertEqual(span[1],
+                                 ast._children[1]._children[span[0]]['colspan'])
 
         def test_font(self):
             expressions = ['''.TS
@@ -454,7 +446,8 @@ if __name__ == "__main__":
 
             for expr, values in zip(expressions, expected):
                 ast = self.parser.parse(expr)
-                self.assertEqual(values[2],
-                                 ast._children[values[0]]._children[values[1]]['font'])
+                self.assertEqual(
+                    values[2],
+                    ast._children[values[0]]._children[values[1]]['font'])
 
     ut.main()
