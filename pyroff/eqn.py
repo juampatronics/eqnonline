@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
 import re
-from pyroff.eqn2latex import Eqn2Latex
+from .eqn2latex import Eqn2Latex
 
 
 class EqnError(Exception):
@@ -56,12 +56,12 @@ class InlineEqn(object):
             '([^{0}]*{0})(?P<eqn>[^{1}]+)({1})'.format(start, end))
 
     def compile(self, text):
-        match = self._regexp.match(text)
+        match = self._regexp.findall(text)
         if not match:
             return text
-        latex = self._compiler.translate(match.group('eqn')).replace('\\',
-                                                                     '\\\\')
-        return self._regexp.sub(r'\1{0}\3'.format(latex), text)
+        subs = [''.join([case[0], self._compiler.translate(case[1]), case[2]])
+                for case in match]
+        return ''.join(subs)
 
 
 eqnlatex = Eqn2Latex()
@@ -116,11 +116,9 @@ if __name__ == "__main__":
             self.assertEqual(result, r'Inlined as #\frac{x}{2}#')
 
         def test_multiple(self):
-            return
-            code = 'Inlined as #x over 2# inline and #x != y#'
+            code = 'Inlined as #x over 2# and #x != y#'
             result = self._compiler.compile(code)
-            print('result = ', result)
-            self.assertEqual(result, r'Inlined as #\frac{x}{2}# and #x \neq y#')
+            self.assertEqual(result, r'Inlined as #\frac{x}{2}# and #x \ne y#')
 
     class TestPreprocessor(ut.TestCase):
         def test_delim(self):
