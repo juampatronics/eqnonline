@@ -34,22 +34,137 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
 import re
-# you may as well add pyroff to PYTHONPATH
-sys.path.append('../')
 from pyroff.eqn2latex import Eqn2Latex
 
-input = open(sys.argv[1], 'r') if len(sys.argv) > 1 else sys.stdin
+
+class EqnError(Exception):
+    pass
+
+# delimiters should not be any of the following
+invalid_delim = '^{}~"'
+
+
+class InlineEqn(object):
+    def __init__(self, start, end, eqncompiler=None):
+        if start is None or len(start) != 1 or start in invalid_delim:
+            raise EqnError('Invalid start delimiter')
+        if end is None or len(end) != 1 or end in invalid_delim:
+            raise EqnError('Invalid end delimiter')
+
+        self._compiler = eqncompiler if eqncompiler else Eqn2Latex()
+        self._regexp = re.compile(
+            '([^{0}]*{0})(?P<eqn>[^{1}]+)({1})'.format(start, end))
+
+    def compile(self, text):
+        match = self._regexp.match(text)
+        if not match:
+            return text
+        latex = self._compiler.translate(match.group('eqn')).replace('\\',
+                                                                     '\\\\')
+        return self._regexp.sub(r'\1{0}\3'.format(latex), text)
+
+
 eqnlatex = Eqn2Latex()
 
-for line in input:
-    if not re.match('^\.EQ', line):
-        print(line, end='')
-    else:
-        print(line, end='')
-        lines = []
-        line = input.readline()[:-1]
-        while not re.match('^\.EN', line):
-            lines.extend(line)
-            line = input.readline()[:-1]
-        print(eqnlatex.translate(''.join(lines)))
-        print(line, end='')
+
+def eqn(input=sys.stdin, out=sys.stdout):
+    delim = None
+    nline = 0
+    for line in input:
+        nline += 1
+        if not re.match('^\.EQ', line):
+            out.writelines(delim.compile(line) if delim else line)
+        else:
+            line = input.readline()
+            nline += 1
+            if line.startswith('delim'):
+                match = re.match('delim\s+(?P<start>\S)(?P<end>\S)', line)
+                if not match:
+                    raise EqnError('Wrong specification of delimiters for ' +
+                                   'inline expressions at line {0}: "{1}"'
+                                   .format(nline, line))
+                delim = InlineEqn(match.group('start'),
+                                  match.group('end'),
+                                  eqnlatex)
+                line = input.readline()
+                nline += 1
+                if not line.startswith('.EN'):
+                    raise EqnError('Expected .EN')
+                continue
+            else:
+                out.writelines('.EQ\n')
+                lines = []
+                while not re.match('^\.EN', line):
+                    lines.extend(line)
+                    line = input.readline()
+                    nline += 1
+                out.writelines(eqnlatex.translate(''.join(lines)) + '\n')
+                out.writelines(line)
+
+
+if __name__ == "__main__":
+    import unittest as ut
+    from io import StringIO
+
+    class TestInlineExpressions(ut.TestCase):
+        def setUp(self):
+            self._compiler = InlineEqn('#', '#')
+
+        def test_inline(self):
+            code = 'Inlined as #x over 2#'
+            result = self._compiler.compile(code)
+            self.assertEqual(result, r'Inlined as #\frac{x}{2}#')
+
+        def test_multiple(self):
+            return
+            code = 'Inlined as #x over 2# inline and #x != y#'
+            result = self._compiler.compile(code)
+            print('result = ', result)
+            self.assertEqual(result, r'Inlined as #\frac{x}{2}# and #x \neq y#')
+
+    class TestPreprocessor(ut.TestCase):
+        def test_delim(self):
+            code = '''.EQ
+delim ##
+.EN
+Some text #pi sup 2#'''
+            input = StringIO(code)
+            output = StringIO()
+            eqn(input, output)
+            result = output.getvalue()
+            self.assertEqual(result, 'Some text #\pi^{2}#')
+
+        @ut.expectedFailure
+        def test_baddelim(self):
+            code = '''.EQ
+delim {0}{0}
+.EN
+Some text {0}pi sup 2{0}'''
+            for char in invalid_delim:
+                input = StringIO(code.format(char))
+                output = StringIO()
+                eqn(input, output)
+                result = output.getvalue()
+                self.assertEqual(result, 'Some text #\pi^{2}#')
+
+        def test_eqnblock(self):
+            code = '''Some text
+.EQ
+x over 2
+.EN
+and more'''
+            input = StringIO(code)
+            output = StringIO()
+            eqn(input, output)
+            result = output.getvalue()
+            self.assertEqual(result, '''Some text
+.EQ
+\\frac{x}{2}
+.EN
+and more''')
+
+    suite = ut.TestSuite()
+    suite.addTest(ut.makeSuite(TestInlineExpressions))
+    suite.addTest(ut.makeSuite(TestPreprocessor))
+    runner = ut.TextTestRunner()
+    runner.run(suite)
