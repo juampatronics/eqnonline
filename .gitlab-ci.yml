@@ -15,6 +15,7 @@ job1:
     - python3 -m pyroff.pytbl
     - python3 -m pyroff.tbl2html
     - python3 -m pyroff.ast
+    - python3 -m pyroff.eqn
   only:
     - master
   tags:
