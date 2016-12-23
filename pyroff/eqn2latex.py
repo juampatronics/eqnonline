@@ -49,6 +49,7 @@ symbols_map = {
     '!=': '\\ne',
     '==': '\\equiv',
     'inf': '\\infty',
+    '+-': '\\pm',
     }
 
 
@@ -167,6 +168,7 @@ if __name__ == "__main__":
 
         def test_symbols(self):
             cases = [('x -> inf', r'x \to \infty'),
+                     ('x +- y', r'x \pm y'),
                      ('x != y', r'x \ne y')]
 
             self._runtests(cases)

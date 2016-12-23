@@ -126,7 +126,7 @@ def t_SPACE(t):
 
 
 math_symbols = ['GE', 'LE', 'EQ', 'NOTEQ', 'LARROW', 'DOTS',
-                'RSHIFT', 'LSHIFT']
+                'RSHIFT', 'LSHIFT', 'PM']
 
 
 def t_GE(t):
@@ -171,6 +171,11 @@ def t_RSHIFT(t):
 
 def t_LSHIFT(t):
     r'<<'
+    return t
+
+
+def t_PM(t):
+    r'\+-'
     return t
 
 
@@ -363,7 +368,8 @@ def p_box_math(p):
            | NOTEQ
            | LSHIFT
            | RSHIFT
-           | PARTIAL'''
+           | PARTIAL
+           | PM'''
     p[0] = eqnnode('mathop', p[1])
 
 
@@ -560,14 +566,16 @@ if __name__ == "__main__":
 
         def test_mathops(self):
             examples = ['sum from { i=0 } to N-1 x sub i',
-                        'x == y < z > u']
+                        'x == y < z > u',
+                        'x +- y']
             expected = [('to', ('from', ('mathop', ('sum',),
                                          'bracketed', ('text', ('i=0',))),
                                 'text', ('N-1',)),
                          'sub', ('text', ('x',), 'text', ('i',))),
                         ('text', ('x',), 'mathop', ('==',), 'text', ('y',),
                          'text', ('<',), 'text', ('z',), 'text', ('>',),
-                         'text', ('u',))]
+                         'text', ('u',)),
+                        ('text', ('x',), 'mathop', ('+-',), 'text', ('y',))]
             self._runtests(examples, expected)
 
         def test_size(self):
