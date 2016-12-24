@@ -53,6 +53,15 @@ symbols_map = {
     }
 
 
+def space(s):
+    if s == '^':
+        return r'\;'
+    if s == '~':
+        return r'\quad'
+        # return r'\ '
+    return s
+
+
 def escape_chars(s, chars=r'\\'):
     'escape control characters'
     s = re.sub(r'([' + ''.join(chars) + '])', r'\\\1', s)
@@ -60,7 +69,7 @@ def escape_chars(s, chars=r'\\'):
 
 
 def eqn_text(*args):
-    return ' '.join(args)
+    return ' '.join([space(a) for a in args])
 
 
 def eqn_bracketed(*args):
@@ -180,6 +189,11 @@ if __name__ == "__main__":
                       r'\left{ \frac{x^{2}}{2} \right}'),
                      (r'left [ x sup 2 over 2  right ]',
                       r'\left[ \frac{x^{2}}{2} \right]')]
+            self._runtests(cases)
+
+        def test_spaces(self):
+            cases = [('x sup 2^+^1', r'x^{2} \; + \; 1'),
+                     ('x sup 2+~1', r'x^{2+} \quad 1')]
             self._runtests(cases)
 
     ut.main()

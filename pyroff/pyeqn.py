@@ -48,7 +48,7 @@ import inspect
 # than just defining simple regexp while ensuring they are checked in a given
 # order.  We need to ensure that t_TEXT will be checked last.
 
-t_ANY_ignore = ' \t\^~'
+t_ANY_ignore = ' \t'
 
 
 def t_newline(t):
@@ -93,7 +93,8 @@ def define_specials(words, lowercase=False):
 reserved = gen_reserved_dict(reserved_words, True)
 reserved.update(gen_reserved_dict(special_chars))
 
-tokens = ['LCURLYB', 'RCURLYB', 'LBRACKET', 'RBRACKET', 'LEFT', 'RIGHT', 'TEXT']
+tokens = ['LCURLYB', 'RCURLYB', 'LBRACKET', 'RBRACKET', 'LEFT', 'RIGHT', 'TEXT',
+          'SPACE']
 
 
 def t_LCURLYB(t):
@@ -245,8 +246,9 @@ def p_eqn(p):
     p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
-def p_box_texr(p):
-    'box : TEXT'
+def p_text(p):
+    '''box : TEXT
+           | SPACE'''
     p[0] = eqnnode('text', p[1])
 
 
@@ -527,7 +529,8 @@ if __name__ == "__main__":
                         ('sup', ('sub', ('text', ('x',), 'text', ('i',)),
                                  'text', ('j',))),
                         ('sup', ('sub', ('text', ('y',), 'text', ('1=x',)),
-                                 'text', ('2+',)), 'text', ('1',))]
+                                 'text', ('2+',)), 'text', ('^',),
+                         'text', ('1',))]
 
             self._runtests(examples, expected)
 
@@ -539,6 +542,7 @@ if __name__ == "__main__":
                         ('over', ('text', ('y',),
                                   'bracketed', ('sup', ('text', ('1=x',),
                                                         'text', ('2+',)),
+                                                'text', ('^',),
                                                 'text', ('1',))))]
             self._runtests(examples, expected)
 
@@ -639,13 +643,23 @@ if __name__ == "__main__":
                          'special_char', ('inf',))]
             self._runtests(examples, expected)
 
+        def test_spaces(self):
+            examples = ['x sup 2^+~1', 'x sup 2+~1']
+            expected = [('sup', ('text', ('x',), 'text', ('2',)),
+                         'text', ('^',), 'text', ('+',), 'text', ('~',),
+                         'text', ('1',)),
+                        ('sup', ('text', ('x',), 'text', ('2+',)),
+                         'text', ('~',), 'text', ('1',))]
+            self._runtests(examples, expected)
+
     class TestConversion(ut.TestCase):
         def setUp(self):
             self._parser = yacc.yacc(start='eqn', debug=debug_mode)
 
         def test_fractions(self):
             examples = ['x over y+z', 'x over y +z', 'y over { 1=x sup 2+^1 }']
-            expected = ['x over y+z', 'x over y +z', 'y over { 1=x sup 2+ 1 }']
+            expected = ['x over y+z', 'x over y +z',
+                        'y over { 1=x sup 2+ ^ 1 }']
             for i, s in enumerate(examples):
                 t = self._parser.parse(s)
                 result = ' '.join(process_ast(t, redocallbacks))
