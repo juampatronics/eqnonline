@@ -2,7 +2,7 @@
 """
 eqn.py the equivalent of the eqn preprocessor
 
-Copyright (C) 2016
+Copyright (C) 2016-2017
 Juan Pablo de la Cruz Gutiérrez
 All rights reserved.
 

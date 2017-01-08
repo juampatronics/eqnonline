@@ -2,7 +2,7 @@
 """
 tbllexer.py A tokenizer for the tbl language.
 
-Copyright (C) 2016
+Copyright (C) 2016-2017
 Juan Pablo de la Cruz Gutierrez
 All rights reserved.
 

@@ -5,7 +5,7 @@ pyeqn a parser for the eqn language described in
   Brian W. Kernighan and Lorinda L. Cherry
   CACM, March, 1975
 
-Copyright (C) 2016
+Copyright (C) 2016-2017
 Juan Pablo de la Cruz Gutiérrez
 All rights reserved.
 

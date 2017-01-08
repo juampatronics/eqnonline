@@ -2,7 +2,7 @@
 """
 eqn2latex.py converts eqn code into LaTeX
 
-Copyright (C) 2016
+Copyright (C) 2016-2017
 Juan Pablo de la Cruz Gutiérrez
 All rights reserved.
 
