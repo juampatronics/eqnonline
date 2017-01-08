@@ -59,7 +59,7 @@ class TblToken(LexToken):
 tokens = {
     'layout': (
         'COMMA', 'CENTER', 'BOX', 'TAB', 'LPAREN', 'RPAREN', 'LINESIZE',
-        'SEMICOLON','ALLBOX',
+        'SEMICOLON','ALLBOX', 'DOUBLEBOX',
         ),
     'format': (
         'DOT', 'FONT', 'NUMBER', 'FORMAT', 'VLINE', 'DBLVLINE', 'ENDFMTLINE',
@@ -78,7 +78,6 @@ class TblLexer(object):
     ignore = ' '
 
     def __init__(self, debug=False):
-        self._tab = '\t'
         self._debug = debug
 
         # create LUTs for regexps
@@ -112,6 +111,7 @@ class TblLexer(object):
                 t = TblToken(typename, match.group())
                 t.lineno = self._line
                 t.lexpos = context._pos
+                t.lexmatch = match
                 context._pos += match.end()
                 return t
             return None
@@ -128,7 +128,16 @@ class TblLexer(object):
             return method(tok) if tok else None
         return _tokenmethod
 
+    def _set_tab(self, tab=r'\t'):
+        'Sets the separator token for the table elements dynamically.'
+        if tab in '\\|+.?[]()':
+            tab = '\\' + tab
+        self._callbacks['body']['TEXT'] = \
+                self._token_from_regexp(r'[^' + tab + r'\n]+', 'TEXT')
+        self._callbacks['body']['TAB'] = self._token_from_regexp(tab, 'TAB')
+
     def input(self, data):
+        'Sets the input text and initializes the lexer.'
         if type(data) != str:
             raise LexError('Invalid input: ' + data, '')
         self._current_state = ('layout', 'format', 'body')
@@ -139,6 +148,7 @@ class TblLexer(object):
         self._pos = 0
 
     def token(self):
+        'Returns the next token in the stream. If none left returns None.'
         if self._pos >= len(self._data):
             return None
         while self._pos < len(self._data):
@@ -149,7 +159,6 @@ class TblLexer(object):
 
         while self._pos < len(self._data):
             for state in self._current_state:
-                print('>>> state = ', state)
                 for cb in self._callbacks[state]:
                     tok = self._callbacks[state][cb](self._data[self._pos:])
                     if tok is not None:
@@ -161,9 +170,10 @@ class TblLexer(object):
                             self._current_state = ('format', 'body')
                         elif tok.type == 'DOT' or state == 'body':
                             self._current_state = ('body',)
-                        if tok.type == 'TAB' and state == 'body':
-                            # ignore it and return next element in the table
-                            return self.token()
+                        if state == 'body':
+                            if tok.type == 'TAB' or tok.type == 'NEWLINE':
+                                # ignore and return next element in the table
+                                return self.token()
                         if self._debug:
                             print('>>> tok = ', tok)
                         return tok
@@ -172,6 +182,7 @@ class TblLexer(object):
 
     t_layout_CENTER = r'\bcenter\b'
     t_layout_ALLBOX = r'\ballbox\b'
+    t_layout_DOUBLEBOX = r'\bdoublebox\b'
     t_layout_BOX = r'\bbox\b'
     t_layout_COMMA = r','
     t_layout_LPAREN = r'\('
@@ -179,12 +190,12 @@ class TblLexer(object):
     t_format_DBLVLINE = r'\|\|+'
     t_format_VLINE = r'\|'
     t_format_NUMBER = r'\d+(\.[0-9+])*i*'
-    t_body_TEXT = r'[^\t]+'
+    t_body_TEXT = r'[^\t\n]+'
     t_body_TAB = r'\t'
 
     def t_body_NEWLINE(self, t):
         r'(\s*\n)+'
-        self._line += len(t.value.replace(' ', ''))
+        self._line += t.value.count('\n')
         return t
 
     def t_layout_SEMICOLON(self, t):
@@ -207,16 +218,16 @@ class TblLexer(object):
 
     def t_layout_TAB(self, t):
         r'\btab\s*\(\s*(?P<tab>[^)]+)\s*\)'
-        tab = t.lexer.lexmatch.group('tab').strip()
+        tab = t.lexmatch.group('tab').strip()
         t.value = tab
         if len(tab) != 1:
-            raise Exception('Invalid tab at line :' + t.lexer.lineno)
-        self.datalexer.set_tab(tab)
+            raise Exception('Invalid tab at line :' + t.lineno)
+        self._set_tab(tab)
         return t
 
     def t_layout_LINESIZE(self, t):
         r'\blinesize\s*\(\s*(?P<linesize>[^)]+)\s*\)'
-        t.value = t.lexer.lexmatch.group('linesize').strip()
+        t.value = t.lexmatch.group('linesize').strip()
         return t
 
     def t_format_ENDFMTLINE(self, t):
@@ -234,10 +245,18 @@ class TblLexer(object):
 
 if __name__ == '__main__':
     import unittest as ut
-    lexer = TblLexer(True)
+    lexer = TblLexer()
 
     class TestLayout(ut.TestCase):
-        def test_layout(self):
+        def _test_cases(self, samples, expected_tokens):
+            for i, sample in enumerate(samples):
+                lexer.input(sample)
+                tok = lexer.token()
+                while tok:
+                    self.assertEqual(tok, expected_tokens[i].pop(0))
+                    tok = lexer.token()
+
+        def test_basic(self):
             samples = ['''allbox, center;
 data1\tdata2''', '''data1\tdata2''', '''c l.
 data1\tdata2''', '''box;
@@ -256,11 +275,31 @@ data1\tdata2''']
                  TblToken('DOT', '.'),
                  TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2')]]
 
-            for i, sample in enumerate(samples):
-                lexer.input(sample)
-                tok = lexer.token()
-                while tok:
-                    self.assertEqual(tok, expected_tokens[i].pop(0))
-                    tok = lexer.token()
+            self._test_cases(samples, expected_tokens)
+
+        def test_tab(self):
+            samples = ['''tab(@);
+data1@data2''']
+            expected_tokens = [[TblToken('TAB', '@'),
+                 TblToken('SEMICOLON', ';'),
+                 TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2')]]
+            self._test_cases(samples, expected_tokens)
+
+        def test_empty(self):
+            samples = ['''doublebox, tab(|);
+c c
+^ c.
+data1|data2
+data3|data4''']
+            expected_tokens = [
+                [TblToken('DOUBLEBOX', 'doublebox'), TblToken('COMMA', ','),
+                 TblToken('TAB', '|'), TblToken('SEMICOLON', ';'),
+                 TblToken('FORMAT', 'c'), TblToken('FORMAT', 'c'),
+                 TblToken('ENDFMTLINE', '\n'),
+                 TblToken('FORMAT', '^'), TblToken('FORMAT', 'c'),
+                 TblToken('DOT', '.'),
+                 TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2'),
+                 TblToken('TEXT', 'data3'), TblToken('TEXT', 'data4')]]
+            self._test_cases(samples, expected_tokens)
 
     ut.main()
