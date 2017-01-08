@@ -16,6 +16,7 @@ job1:
     - python3 -m pyroff.tbl2html
     - python3 -m pyroff.ast
     - python3 -m pyroff.eqn
+    - python3 -m pyroff.tlexer
   only:
     - master
   tags:
