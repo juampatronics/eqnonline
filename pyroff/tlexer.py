@@ -332,4 +332,20 @@ a block'''), TblToken('TEXT', 'data3'), TblToken('TEXT', '{}'),
                 TblToken('EMPTYCELL', r'\^'), TblToken('EMPTYCELL', r'\^')]]
             self._test_cases(samples, expected_tokens)
 
+        def test_fonts(self):
+            samples = ['''rB ci rbI
+rBp12 ci rbI.
+data1\tdata2\tdata3''']
+            expected_tokens = [[TblToken('FORMAT', 'r'), TblToken('FONT', 'B'),
+                TblToken('FORMAT', 'c'), TblToken('FONT', 'i'),
+                TblToken('FORMAT', 'r'), TblToken('FONT', 'b'),
+                TblToken('FONT', 'I'), TblToken('ENDFMTLINE', '\n'),
+                TblToken('FORMAT', 'r'), TblToken('FONT', 'B'),
+                TblToken('FONT', 'p12'), TblToken('FORMAT', 'c'),
+                TblToken('FONT', 'i'), TblToken('FORMAT', 'r'),
+                TblToken('FONT', 'b'), TblToken('FONT', 'I'),
+                TblToken('DOT', '.'), TblToken('TEXT', 'data1'),
+                TblToken('TEXT', 'data2'), TblToken('TEXT', 'data3')]]
+            self._test_cases(samples, expected_tokens)
+
     ut.main()
