@@ -65,7 +65,8 @@ tokens = {
         'DOT', 'FONT', 'NUMBER', 'FORMAT', 'VLINE', 'DBLVLINE', 'ENDFMTLINE',
         ),
     'body': (
-        'TEXT', 'NEWLINE', 'TAB',
+        'EMPTYCELL', 'BLOCKSTART', 'BLOCKEND', 'TEXT', 'NEWLINE', 'TAB',
+        'TEXTBLOCK'
         )
     }
 
@@ -82,7 +83,7 @@ class TblLexer(object):
 
         # create LUTs for regexps
         symbols = dict([sym for sym in inspect.getmembers(self)
-                   if sym[0].startswith('t_')])
+                        if sym[0].startswith('t_')])
         self._callbacks = dict()
         for state in states:
             sttoken = OrderedDict()
@@ -142,6 +143,7 @@ class TblLexer(object):
             raise LexError('Invalid input: ' + data, '')
         self._current_state = ('layout', 'format', 'body')
         self._first_token = True
+        self._set_tab('\t')
         self._tab = '\t'
         self._data = data
         self._line = 0
@@ -171,9 +173,13 @@ class TblLexer(object):
                         elif tok.type == 'DOT' or state == 'body':
                             self._current_state = ('body',)
                         if state == 'body':
-                            if tok.type == 'TAB' or tok.type == 'NEWLINE':
+                            if tok.type in ['TAB', 'NEWLINE','BLOCKEND']:
                                 # ignore and return next element in the table
                                 return self.token()
+                            if tok.type == 'BLOCKSTART':
+                                tok = self._callbacks[state]['TEXTBLOCK'](
+                                                    self._data[self._pos:])
+                                tok.type = 'TEXT'
                         if self._debug:
                             print('>>> tok = ', tok)
                         return tok
@@ -190,8 +196,12 @@ class TblLexer(object):
     t_format_DBLVLINE = r'\|\|+'
     t_format_VLINE = r'\|'
     t_format_NUMBER = r'\d+(\.[0-9+])*i*'
-    t_body_TEXT = r'[^\t\n]+'
     t_body_TAB = r'\t'
+    t_body_EMPTYCELL = '\\\\\^'
+    t_body_BLOCKSTART = r'T{'
+    t_body_BLOCKEND = r'}T'
+    t_body_TEXTBLOCK = r'([^}]|}(?!T))+'
+    t_body_TEXT = r'[^\t\n]+'
 
     def t_body_NEWLINE(self, t):
         r'(\s*\n)+'
@@ -279,10 +289,20 @@ data1\tdata2''']
 
         def test_tab(self):
             samples = ['''tab(@);
-data1@data2''']
+data1@data2''', '''tab(|);
+r s s s.
+one|two|three|four|five
+''']
             expected_tokens = [[TblToken('TAB', '@'),
                  TblToken('SEMICOLON', ';'),
-                 TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2')]]
+                 TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2')],
+                [TblToken('TAB', '|'), TblToken('SEMICOLON', ';'),
+                 TblToken('FORMAT', 'r'), TblToken('FORMAT', 's'),
+                 TblToken('FORMAT', 's'), TblToken('FORMAT', 's'),
+                 TblToken('DOT', '.'),
+                 TblToken('TEXT', 'one'), TblToken('TEXT', 'two'),
+                 TblToken('TEXT', 'three'), TblToken('TEXT', 'four'),
+                 TblToken('TEXT', 'five')]]
             self._test_cases(samples, expected_tokens)
 
         def test_empty(self):
@@ -290,7 +310,7 @@ data1@data2''']
 c c
 ^ c.
 data1|data2
-data3|data4''']
+\^|data4''']
             expected_tokens = [
                 [TblToken('DOUBLEBOX', 'doublebox'), TblToken('COMMA', ','),
                  TblToken('TAB', '|'), TblToken('SEMICOLON', ';'),
@@ -299,7 +319,17 @@ data3|data4''']
                  TblToken('FORMAT', '^'), TblToken('FORMAT', 'c'),
                  TblToken('DOT', '.'),
                  TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2'),
-                 TblToken('TEXT', 'data3'), TblToken('TEXT', 'data4')]]
+                 TblToken('EMPTYCELL', r'\^'), TblToken('TEXT', 'data4')]]
+            self._test_cases(samples, expected_tokens)
+
+        def test_textblock(self):
+            samples = ['''data1\tT{this is
+a block}T\tdata3
+T{{}}T\t\^\t\^''']
+            expected_tokens = [[TblToken('TEXT', 'data1'),
+                TblToken('TEXT', '''this is
+a block'''), TblToken('TEXT', 'data3'), TblToken('TEXT', '{}'),
+                TblToken('EMPTYCELL', r'\^'), TblToken('EMPTYCELL', r'\^')]]
             self._test_cases(samples, expected_tokens)
 
     ut.main()
