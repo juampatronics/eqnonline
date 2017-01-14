@@ -1,3 +1,4 @@
 *.pyc
 parsetab.py
 __pycache__/
+tags
