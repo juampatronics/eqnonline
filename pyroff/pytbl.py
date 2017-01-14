@@ -251,7 +251,6 @@ if __name__ == "__main__":
                 self.assertEqual(should, ast)
 
         def test_tables(self):
-            return
             expressions = ['''tab (@);
                 c l.
                 1@User Console
@@ -398,7 +397,6 @@ if __name__ == "__main__":
                 self.assertEqual(ast._children[3]._children[0]['span'], span)
 
         def test_colspan(self):
-            return
             expressions = ['''tab(|);
                 r s s s.
                 one|two|three|four|five
@@ -418,7 +416,6 @@ if __name__ == "__main__":
                                  ast._children[1]._children[span[0]]['colspan'])
 
         def test_font(self):
-            return
             expressions = ['''tab(|);
                 rB ci rbI
                 rBp12 ci rbI.
