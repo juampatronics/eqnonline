@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import inspect
 import re
 from functools import wraps
-from .tbllexer import TblLexer
+from .tlexer import TblLexer
 from .ast import TranslatorFactory, ASTNode, TokenNode
 
 
@@ -75,17 +75,16 @@ class TblParser(object):
                             for name, f in symbols
                             if name.startswith('p_') and inspect.ismethod(f))
 
-        self.states = {'start': ['START'],
-                       'options': ['TAB', 'ALLBOX', 'EXPAND', 'CENTER',
+        self.states = {'layout': ['TAB', 'ALLBOX', 'EXPAND', 'CENTER',
                                    'LINESIZE', 'SEMICOLON', 'COMMA', 'BOX'],
                        'format': ['VLINE', 'DBLVLINE', 'FORMAT', 'FONT',
                                   'DOT', 'ENDFMTLINE'],
-                       'data': ['TBLDATA', 'EMPTYLINE', 'EMPTYCELL', 'END',
+                       'data': ['TEXT', 'EMPTYLINE', 'EMPTYCELL',
                                 'HLINE', 'DBLHLINE', 'NEWLINE']}
         self._reset()
 
     def _reset(self):
-        self._current_state = ('start',)
+        self._current_state = ('layout', 'format', 'data')
         self._cell = []
         self._options = None
         self._ast = []
@@ -98,8 +97,8 @@ class TblParser(object):
 
     def expected(self, t):
         'Checks whether the token is valid given the current state.'
-        for s in self._current_state:
-            if t.type in self.states[s]:
+        for state in self._current_state:
+            if t.type in self.states[state]:
                 return True
         return False
 
@@ -114,12 +113,7 @@ class TblParser(object):
                 return s
         return None
 
-    def p_start(self, t):
-        if t.type != 'START':
-            raise InvalidTokenError(t, 'START')
-        self._current_state = ('options', 'format')
-
-    def p_options(self, t):
+    def p_layout(self, t):
         if t.type == 'SEMICOLON':
             self._current_state = ('format',)
             if self._options is not None:
@@ -137,7 +131,6 @@ class TblParser(object):
         if t.type == 'FORMAT':
             # s means expanding options defined in prev cell.
             if t.value.lower() == 's':
-                # set_trace()
                 if len(self._cell) == 0:
                     raise InvalidTokenError(t)
                 if not self._cell[-1].has_key('colspan'):
@@ -175,6 +168,13 @@ class TblParser(object):
         self._ast[-nspan-1]._children[col]['span'] = nspan + 1
         self._spancount[col] = 0
 
+    def _add_row(self):
+        'adds the current row to the AST'
+        if not self._tblrow.is_empty():
+            self._ast.append(self._tblrow)
+            self._nrow += 1
+            self._ncol = 0
+
     def p_data(self, t):
         if t.type == 'END':
             self._current_state = ('start',)
@@ -185,10 +185,7 @@ class TblParser(object):
 
         if t.type == 'NEWLINE':
             # we need to skip (multiple) newlines before next data
-            if not self._tblrow.is_empty():
-                self._ast.append(self._tblrow)
-                self._nrow += 1
-                self._ncol = 0
+            self._add_row()
             self._tblrow = ASTNode('tblrow')
             return
 
@@ -210,9 +207,10 @@ class TblParser(object):
         self._update_span_attr(self._ncol)
         self._ncol += 1
 
-    def parse(self, data):
-        lexer = TblLexer()
+    def parse(self, data, debug=False):
+        lexer = TblLexer(debug)
         lexer.input(data)
+        self._current_state = ('layout', 'format', 'data')
         while True:
             tok = lexer.token()
             if not tok or not self.expected(tok):
@@ -221,6 +219,12 @@ class TblParser(object):
             if state is None:
                 raise InvalidTokenError(tok)
             self.actions[state](tok)
+
+        # add last row
+        self._add_row()
+
+        for col in range(len(self._spancount)):
+            self._update_span_attr(col)
         ast = ASTNode('tbl', self._ast)
         self._reset()
         return ast
@@ -247,39 +251,31 @@ if __name__ == "__main__":
                 self.assertEqual(should, ast)
 
         def test_tables(self):
-            expressions = ['''
-                .TS
-                tab (@);
+            return
+            expressions = ['''tab (@);
                 c l.
                 1@User Console
                 2@Monochromatic graphics terminal
                 3@Touch screen
-                4@High resolution display
-                .TE''', '''.TS
-                center,box,tab(%);
+                4@High resolution display''', '''center,box,tab(%);
                 c l.
                 1%User Console
                 2%Monochromatic graphics terminal
                 3%Touch screen
-                4%High resolution display
-                .TE''', '''.TS
-                tab(|);
+                4%High resolution display''', '''tab(|);
                 c l
                 r r.
                 1|User Console
                 2|Monochromatic graphics terminal
                 3|Touch screen
-                4|High resolution display
-                .TE''', '''.TS
-                tab(|);
+                4|High resolution display''', '''tab(|);
                 c _
                 r r.
                 vertically centered|User Console
                 \^|Monochromatic graphics terminal
                 \^|Touch screen
                 \^|High resolution display
-                =
-                .TE''']
+                =''']
 
             expected = [
                 ASTNode('tbl',
@@ -382,22 +378,18 @@ if __name__ == "__main__":
         def test_span(self):
             'check wether cells are properly spanned over rows'
 
-            expressions = ['''.TS
-                tab(|);
+            expressions = ['''tab(|);
                 c _
                 r r.
                 vertically centered|User Console
                 \^|Monochromatic graphics terminal
-                stop|Touch screen
-                .TE''', '''.TS
-                tab(|);
+                stop|Touch screen''', '''tab(|);
                 c c
                 l r.
                 vertically centered|User Console
                 \^|Monochromatic graphics terminal
                 \^|Touch screen
-                \^|High resolution display
-                .TE''']
+                \^|High resolution display''']
 
             expected = [2, 4]
 
@@ -406,20 +398,17 @@ if __name__ == "__main__":
                 self.assertEqual(ast._children[3]._children[0]['span'], span)
 
         def test_colspan(self):
-            expressions = ['''.TS
-                tab(|);
+            return
+            expressions = ['''tab(|);
                 r s s s.
                 one|two|three|four|five
                 1|2|3|4|5
-                1|2|3|4|5
-                .TE''', '''.TS
-                tab(|);
+                1|2|3|4|5''', '''tab(|);
                 r c s r.
                 vertically centered|User Console
                 Monochromatic graphics terminal
                 Touch screen
-                High resolution display
-                .TE''']
+                High resolution display''']
 
             expected = [(0, 4), (1, 2)]
 
@@ -429,14 +418,13 @@ if __name__ == "__main__":
                                  ast._children[1]._children[span[0]]['colspan'])
 
         def test_font(self):
-            expressions = ['''.TS
-                tab(|);
+            return
+            expressions = ['''tab(|);
                 rB ci rbI
                 rBp12 ci rbI.
                 one|two|three|four|five
                 1|2|3|4|5
-                1|2|3|4|5
-                .TE''']
+                1|2|3|4|5''']
 
             expected = [(1, 0, {'bold': True}), (1, 1, {'italic': True}),
                         (1, 2, {'italic': True, 'bold': True}),

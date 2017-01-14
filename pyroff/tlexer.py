@@ -173,7 +173,7 @@ class TblLexer(object):
                         elif tok.type == 'DOT' or state == 'body':
                             self._current_state = ('body',)
                         if state == 'body':
-                            if tok.type in ['TAB', 'NEWLINE','BLOCKEND']:
+                            if tok.type in ['TAB', 'BLOCKEND']:
                                 # ignore and return next element in the table
                                 return self.token()
                             if tok.type == 'BLOCKSTART':
@@ -291,8 +291,7 @@ data1\tdata2''']
             samples = ['''tab(@);
 data1@data2''', '''tab(|);
 r s s s.
-one|two|three|four|five
-''']
+one|two|three|four|five''']
             expected_tokens = [[TblToken('TAB', '@'),
                  TblToken('SEMICOLON', ';'),
                  TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2')],
@@ -310,7 +309,8 @@ one|two|three|four|five
 c c
 ^ c.
 data1|data2
-\^|data4''']
+\^|data4''', '''c _.
+vertically centered\tUser Console''']
             expected_tokens = [
                 [TblToken('DOUBLEBOX', 'doublebox'), TblToken('COMMA', ','),
                  TblToken('TAB', '|'), TblToken('SEMICOLON', ';'),
@@ -319,7 +319,11 @@ data1|data2
                  TblToken('FORMAT', '^'), TblToken('FORMAT', 'c'),
                  TblToken('DOT', '.'),
                  TblToken('TEXT', 'data1'), TblToken('TEXT', 'data2'),
-                 TblToken('EMPTYCELL', r'\^'), TblToken('TEXT', 'data4')]]
+                 TblToken('NEWLINE', '\n'),
+                 TblToken('EMPTYCELL', r'\^'), TblToken('TEXT', 'data4')],
+                [TblToken('FORMAT', 'c'), TblToken('FORMAT', '_'),
+                 TblToken('DOT', '.'), TblToken('TEXT', 'vertically centered'),
+                 TblToken('TEXT', 'User Console')]]
             self._test_cases(samples, expected_tokens)
 
         def test_textblock(self):
@@ -328,7 +332,8 @@ a block}T\tdata3
 T{{}}T\t\^\t\^''']
             expected_tokens = [[TblToken('TEXT', 'data1'),
                 TblToken('TEXT', '''this is
-a block'''), TblToken('TEXT', 'data3'), TblToken('TEXT', '{}'),
+a block'''), TblToken('TEXT', 'data3'), TblToken('NEWLINE', '\n'),
+                TblToken('TEXT', '{}'),
                 TblToken('EMPTYCELL', r'\^'), TblToken('EMPTYCELL', r'\^')]]
             self._test_cases(samples, expected_tokens)
 
