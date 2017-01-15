@@ -103,14 +103,15 @@ class _Tbl2Html(object):
             self._col += 1
             return ''
         html = '<td'
-        stylerow = self._row if self._row < len(self._cellfmt) else -1
-        if self._col < len(self._cellfmt[stylerow]):
-            html += ' style="' + self._cellfmt[stylerow][self._col] + '"'
-        if meta:
-            if 'span' in meta:
-                html += ' rowspan="' + str(meta['span']) + '"'
-            if 'font' in meta:
-                pass
+        if len(self._cellfmt):
+            stylerow = self._row if self._row < len(self._cellfmt) else -1
+            if self._col < len(self._cellfmt[stylerow]):
+                html += ' style="' + self._cellfmt[stylerow][self._col] + '"'
+            if meta:
+                if 'span' in meta:
+                    html += ' rowspan="' + str(meta['span']) + '"'
+                if 'font' in meta:
+                    pass
         html += '>'
         self._col += 1
         return html + args[0] + '</td>' if len(args) == 1 \
@@ -250,6 +251,15 @@ if __name__ == "__main__":
                 <td style="text-alignment : center;font-size: 12px;">first</td>
                 <td style="text-alignment : right;font-style: italic;
                 font-weight: bold;">second</td></tr></table>''']
+
+            self._run_tests(expressions, expected)
+
+        def test_baredata(self):
+            expressions = ['''data1\tdata2
+data3\tdata4''']
+            expected = ['''<table style="border: none;">
+                        <tr><td>data1</td><td>data2</td></tr>
+                        <tr><td>data3</td><td>data4</td></tr></table>''']
 
             self._run_tests(expressions, expected)
 
