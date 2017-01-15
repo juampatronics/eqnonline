@@ -34,7 +34,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import inspect
 import re
-from functools import wraps
 from .tbllexer import TblLexer
 from .ast import TranslatorFactory, ASTNode, TokenNode
 
@@ -76,7 +75,7 @@ class TblParser(object):
                             if name.startswith('p_') and inspect.ismethod(f))
 
         self.states = {'layout': ['TAB', 'ALLBOX', 'EXPAND', 'CENTER',
-                                   'LINESIZE', 'SEMICOLON', 'COMMA', 'BOX'],
+                                  'LINESIZE', 'SEMICOLON', 'COMMA', 'BOX'],
                        'format': ['VLINE', 'DBLVLINE', 'FORMAT', 'FONT',
                                   'DOT', 'ENDFMTLINE'],
                        'data': ['TEXT', 'EMPTYLINE', 'EMPTYCELL',
@@ -115,7 +114,7 @@ class TblParser(object):
 
     def p_layout(self, t):
         if t.type == 'SEMICOLON':
-            self._current_state = ('format',)
+            self._current_state = ('format', 'data')
             if self._options is not None:
                 self._ast.append(self._options)
             return
@@ -434,5 +433,38 @@ if __name__ == "__main__":
                 self.assertEqual(
                     values[2],
                     ast._children[values[0]]._children[values[1]]['font'])
+
+        def test_noformat(self):
+            expressions = ['''data1\tdata2
+data3\tdata4''', '''allbox;
+data1\tdata2''', '''c l.
+data1\tdata2''']
+            expected = [ASTNode('tbl',
+                                [ASTNode('tblrow',
+                                         [ASTNode('cell', TokenNode('data1')),
+                                          ASTNode('cell', TokenNode('data2'))]),
+                                 ASTNode('tblrow',
+                                         [ASTNode('cell', TokenNode('data3')),
+                                          ASTNode('cell', TokenNode('data4'))])
+                                 ]),
+                        ASTNode('tbl',
+                                [ASTNode('tblformat',
+                                         [ASTNode('option',
+                                                  [TokenNode('allbox')])]),
+                                 ASTNode('tblrow',
+                                         [ASTNode('cell', TokenNode('data1')),
+                                          ASTNode('cell', TokenNode('data2'))])
+                                 ]),
+                        ASTNode('tbl',
+                                [ASTNode('cellfmtline',
+                                         [ASTNode('cellfmt', TokenNode('c')),
+                                          ASTNode('cellfmt', TokenNode('l'))]),
+                                 ASTNode('tblrow',
+                                         [ASTNode('cell', TokenNode('data1')),
+                                          ASTNode('cell', TokenNode('data2'))])
+                                 ])
+                        ]
+
+            self._test_cases(expressions, expected)
 
     ut.main()
