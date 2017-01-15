@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .pytbl import TblTranslator
 
+
 class _Tbl2Html(object):
     def __init__(self):
         self._init_params()
@@ -144,13 +145,6 @@ if __name__ == "__main__":
             return self
 
         def _run_tests(self, expressions, expected):
-            # for t in range(len(expressions)):
-            for t in range(1):
-                result = self._translator.translate(expressions[t])
-                self.assertEqual(re.sub('\s+', '', result),
-                                 re.sub('\s+', '', expected[t]))
-            return
-
             for case, should in zip(expressions, expected):
                 result = self._translator.translate(case)
                 self.assertEqual(re.sub('\s+', '', result),
@@ -192,8 +186,7 @@ if __name__ == "__main__":
                 <tr><td style="text-alignment : center;">4</td>
                 <td style="text-alignment : left;">High resolution display
                 </td></tr></table>
-                ''',
-                '''<table style="text-align: center;border: 1px solid black;
+                ''', '''<table style="text-align: center;border: 1px solid black;
                 border: none;"><tr><td style="text-alignment : center;">1</td>
                 <td style="text-alignment : left;">User Console</td></tr>
                 <tr><td style="text-alignment : center;">2</td>
@@ -204,8 +197,7 @@ if __name__ == "__main__":
                 <tr><td style="text-alignment : center;">4</td>
                 <td style="text-alignment : left;">High resolution display</td>
                 </tr></table>
-                ''',
-                '''<table style="border: none;"><tr>
+                ''', '''<table style="border: none;"><tr>
                 <td style="text-alignment : center;">1</td>
                 <td style="text-alignment : left;">User Console</td></tr>
                 <tr><td style="text-alignment : right;">2</td>
@@ -216,8 +208,7 @@ if __name__ == "__main__":
                 <tr><td style="text-alignment : right;">4</td>
                 <td style="text-alignment : right;">
                 High resolution display</td></tr></table>
-                ''',
-                '''<table style="border: none;"><tr>
+                ''', '''<table style="border: none;"><tr>
                 <td style="text-alignment : center;" rowspan="4">
                 vertically centered</td> <td style="text-alignment : center;">
                 User Console</td></tr> <tr>
@@ -230,7 +221,6 @@ if __name__ == "__main__":
             self._run_tests(expressions, expected)
 
         def test_colexpansion(self):
-            return
             expressions = ['''tab (@);
                 c l.
                 1@User Console
@@ -253,7 +243,6 @@ if __name__ == "__main__":
             self._run_tests(expressions, expected)
 
         def test_font(self):
-            return
             expressions = ['''tab(|);
                 cp12 rbi.
                 first|second''']
