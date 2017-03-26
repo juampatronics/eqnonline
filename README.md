@@ -3,17 +3,17 @@ You need Python (I work with 3.5 but earlier versions of Python 3 should be fine
 and virtualenv (for simplicity). I decided to also include the libraries in the project,
 so that you do not need to install things like bower.
 
-Set up your a virtual environment
+* Set up your a virtual environment
   virtualenv venv
 
-Start it
-  . venv/bin/activate
+* Start it
+  * . venv/bin/activate
 
-Install the necessary libraries
-  pip install -r requirements.txt
+* Install the necessary libraries
+  * pip install -r requirements.txt
 
-And you are good to go
-  ./run.sh (starts server at localhost:5000)
+* And you are good to go
+  * ./run.sh (starts server at localhost:5000)
 
 
 # Description
