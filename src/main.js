@@ -83,7 +83,7 @@ requirejs(['d3',
       function parseEqn(data) {
         // show current status
         // worker.postMessage(data.getValue());
-        d3.request('http://localhost:5000/eqn?expr=' + data.getValue())
+        d3.request(window.location.href + 'eqn?expr=' + data.getValue())
           .get(function (latex) {
             d3.select('#output')
               .html(KaTeX.renderToString(latex.response));
