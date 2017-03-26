@@ -10,7 +10,7 @@ Start it
   . venv/bin/activate
 
 Install the necessary libraries
-  pip install requirements.txt
+  pip install -r requirements.txt
 
 And you are good to go
   ./run.sh (starts server at localhost:5000)
@@ -19,3 +19,5 @@ And you are good to go
 # Description
 This is a very simple web server so that you can interact live with the eqn to LaTeX
 compiler. It is still in a very early stage, so please be forgiving.
+
+This projects builds upon pyroff, which is included as a subtree.
