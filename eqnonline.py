@@ -5,7 +5,7 @@ Need to install PLY and Flask in your environment to be ableto run it.
 Juan Pablo de la Cruz Gutierrez
 """
 import sys
-import re
+import os
 from flask import Flask, send_from_directory, send_file, request, abort
 sys.path.append('pyroff')
 from pyroff.eqn2latex import Eqn2Latex, EqnException
@@ -53,4 +53,5 @@ def index():
 
 
 if __name__ == "__main__":
-    APP.run()
+    port = int(os.environ.get('PORT', 5000))
+    APP.run(host="0.0.0.0", port=port)
