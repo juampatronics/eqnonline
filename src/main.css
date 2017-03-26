@@ -1,0 +1,34 @@
+body {
+  overflow: hidden;
+}
+
+#editor {
+  width: 50%;
+}
+
+.table {
+  display: table;
+  width: 75%;
+  margin: 0 auto;
+}
+
+.tableRow {
+  display: table-row;
+}
+
+.tableHeading {
+  display: table-header-group;
+}
+
+.tableBody {
+  display: table-row-group;
+}
+
+.tableFoot {
+  display: table-footer-group;
+}
+
+.tableCell, .rTableHead {
+  display: table-cell;
+  border: 2px solid black;
+}
