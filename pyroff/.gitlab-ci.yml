@@ -1,0 +1,23 @@
+image: python:3.3
+
+before_script:
+  - pip3 install ply
+  - export PYTHONPATH=$PWD:$PYTHONPATH
+
+stages:
+  - test
+
+job1:
+  stage: test
+  script:
+    - python3 -m pyroff.pyeqn
+    - python3 -m pyroff.eqn2latex
+    - python3 -m pyroff.pytbl
+    - python3 -m pyroff.tbl2html
+    - python3 -m pyroff.ast
+    - python3 -m pyroff.eqn
+    - python3 -m pyroff.tbllexer
+  only:
+    - master
+  tags:
+    - docker
