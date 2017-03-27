@@ -4,7 +4,7 @@ and virtualenv (for simplicity). I decided to also include the libraries in the 
 so that you do not need to install things like bower.
 
 * Set up your a virtual environment
-  virtualenv venv
+  * virtualenv venv
 
 * Start it
   * . venv/bin/activate
