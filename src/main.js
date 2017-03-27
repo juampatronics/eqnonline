@@ -75,7 +75,7 @@ requirejs(['d3',
     script.src = "libs/codemirror/mode/troff/troff.js";
     script.onload = function () {
       var myCodeMirror = CodeMirror(d3.select('#editor').node(), {
-        value: "x over 2",
+        value: "int from 0 to inf pi (x)dx",
         mode: "troff",
         theme: "dracula"
       });
