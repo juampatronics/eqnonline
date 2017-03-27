@@ -21,3 +21,6 @@ This is a very simple web server so that you can interact live with the eqn to L
 compiler. It is still in a very early stage, so please be forgiving.
 
 This projects builds upon pyroff, which is included as a subtree.
+
+# Acknowledgments
+The nice pi icon enclosed in circle is freely available at [openclipart](https://openclipart.org/detail/220947/Pi%20Symbol%20in%20a%20Circle)
