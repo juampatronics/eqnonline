@@ -7,13 +7,63 @@
     rel="icon" type="image/x-icon" />
   <link rel="stylesheet" type="text/css" href="libs/codemirror/lib/codemirror.css">
   <link rel="stylesheet" type="text/css" href="libs/codemirror/theme/dracula.css">
-  <link rel='stylesheet' href='libs/katex/dist/katex.min.css'>
-  <link rel='stylesheet' href='src/main.css'>
-  <script src="libs/requirejs/require.js" data-main="src/main.js"></script>
+  <link rel="stylesheet" href="libs/katex/dist/katex.min.css">
+  <link rel="stylesheet" href="src/main.css">
+  <script src="libs/d3/build/d3.min.js"></script>
+  <script src="libs/codemirror/lib/codemirror.js"></script>
+  <script src="libs/katex/dist/katex.min.js"></script>
 </head>
 
 <body>
+  <script type="text/javascript">
+    'use strict;';
 
+    var table = d3.select('body')
+      .append('div')
+      .classed('table', true),
+      row = table.append('div')
+        .classed('tableRow', true);
+    row.append('div')
+      .classed('tableCell', true)
+      .attr('id', 'editor');
+    row.append('div')
+      .classed('tableCell', true)
+      .attr('id', 'output');
+
+    newrow = table.append('div')
+      .classed('tableRow', true);
+    newrow.append('div')
+      .classed('tableCell', true)
+      .html('Type in your eqn expression...');
+    newrow.append('div')
+      .classed('tableCell', true)
+      .html('and see how it is compiled into LaTeX');
+
+    var head = document.getElementsByTagName('head')[0],
+      script = document.createElement('script');
+
+    script.src = "libs/codemirror/mode/troff/troff.js";
+    script.onload = function () {
+      var myCodeMirror = CodeMirror(d3.select('#editor').node(), {
+        value: "int from 0 to inf pi (x)dx",
+        mode: "troff",
+        theme: "dracula"
+      });
+
+      function parseEqn(data) {
+        var request = encodeURIComponent(data.getValue());
+        d3.request(window.location.href + 'eqn?expr=' + request)
+          .get(function (latex) {
+            d3.select('#output')
+              .html(katex.renderToString(latex.response));
+          });
+      }
+
+      myCodeMirror.on('changes', parseEqn);
+      parseEqn(myCodeMirror);
+    };
+    head.appendChild(script);
+  </script>
 </body>
 
 </html>
