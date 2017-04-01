@@ -81,9 +81,9 @@ requirejs(['d3',
       });
 
       function parseEqn(data) {
-        // show current status
+        var request = encodeURIComponent(data.getValue());
         // worker.postMessage(data.getValue());
-        d3.request(window.location.href + 'eqn?expr=' + data.getValue())
+        d3.request(window.location.href + 'eqn?expr=' + request)
           .get(function (latex) {
             d3.select('#output')
               .html(KaTeX.renderToString(latex.response));
