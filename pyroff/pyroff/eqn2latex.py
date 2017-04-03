@@ -90,7 +90,7 @@ def eqn_over(*args):
 
 def eqn_special_char(char):
     if char == char.upper():
-        return '\\' + char[0].upper() + char[1:]
+        return '\\' + char[0] + char[1:].lower()
     if char in symbols_map:
         return symbols_map[char]
     return '\\' + char
