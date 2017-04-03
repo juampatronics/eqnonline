@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from .pyeqn import EqnTranslator
+from .pyeqn import EqnTranslator, EqnException
 import sys
 import re
 
@@ -50,7 +50,7 @@ symbols_map = {
     '==': '\\equiv',
     'inf': '\\infty',
     '+-': '\\pm',
-    }
+}
 
 
 def space(s):
@@ -90,7 +90,7 @@ def eqn_over(*args):
 
 def eqn_special_char(char):
     if char == char.upper():
-        return '\\' + char[0].upper() + char[1:]
+        return '\\' + char[0] + char[1:].lower()
     if char in symbols_map:
         return symbols_map[char]
     return '\\' + char
@@ -130,7 +130,8 @@ def eqn_brackets(*args):
 
 class Eqn2Latex(object):
     def __init__(self):
-        self._translator = EqnTranslator().custom(sys.modules[__name__], 'eqn_')
+        self._translator = EqnTranslator().custom(
+            sys.modules[__name__], 'eqn_')
 
     def translate(self, s):
         return self._translator.translate(s)

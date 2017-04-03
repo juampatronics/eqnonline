@@ -41,12 +41,17 @@ import re
 import inspect
 
 
+class EqnException(Exception):
+    'Trigger errors ought to wrong eqn syntax'
+    pass
+
 # Notice that here we do not use any token declaration of the form t_TOKEN =
 # r'...'. This is because of the way PLY orders them. This leads to ambiguities
 # when deciding what is just text and what not. Notice that eqn is very lax
 # about it, and solving it through regexp would be harder and more error prone
 # than just defining simple regexp while ensuring they are checked in a given
 # order.  We need to ensure that t_TEXT will be checked last.
+
 
 t_ANY_ignore = ' \t'
 
@@ -55,12 +60,13 @@ def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
+
 reserved_words = (
     'SUP', 'SUB', 'SUM', 'TO', 'LIM', 'TILDE', 'BAR', 'OVER', 'UNDER', 'HAT',
     'DOT', 'SIZE', 'PARTIAL', 'INT', 'PROD', 'UNION', 'HALF', 'PRIME', 'INTER',
     'APPROX', 'TIMES', 'DEL', 'GRAD', 'INF', 'CDOT', 'ABOVE', 'ROMAN', 'BOLD',
     'ITALIC', 'SQRT', 'UNDER', 'FROM', 'RPILE', 'CPILE', 'LPILE', 'PILE',
-    )
+)
 
 special_chars = [
     'pi', 'ALPHA', 'OMEGA', 'THETA', 'PSI', 'DELTA', 'GAMMA', 'EPSILON', 'ETA',
@@ -68,14 +74,14 @@ special_chars = [
     'theta', 'CHI', 'delta', 'kappa', 'eta', 'iota', 'omicron', 'psi', 'zeta',
     'LAMBDA', 'PHI', 'PI', 'SIGMA', 'UPSILON', 'XI', 'xi', 'upsilon', 'chi',
     'sigma', 'inf',
-    ]
+]
 
 
 # Some tokens are used with different meanings, which leads to ambiguity in
 # syntax. A way to solve this is to define distinguish tokens by its function.
 states = (
     ('bracket', 'exclusive'),
-    )
+)
 
 
 def gen_reserved_dict(words_list, lowercase=False):
@@ -89,6 +95,7 @@ def define_specials(words, lowercase=False):
     else:
         for s in words:
             exec('t_' + s + ' = r\'\\b' + s.lower() + '\\b\'')
+
 
 reserved = gen_reserved_dict(reserved_words, True)
 reserved.update(gen_reserved_dict(special_chars))
@@ -197,12 +204,14 @@ def t_TEXT(t):
     t.type = reserved.get(t.value, 'TEXT')
     return t
 
+
 tokens = math_symbols + list(reserved.values()) + tokens
 
 
 def t_ANY_error(t):
     print("Illegal character '%s' at line %d" % (t.value[0],
                                                  t.lexer.lineno))
+
 
 tokenizer = lex.lex()
 
@@ -237,7 +246,7 @@ precedence = (
     ('left', 'OVER', 'SQRT'),
     ('right', 'HAT', 'TILDE', 'UNDER', 'ROMAN', 'ITALIC', 'BOLD', 'DOT', 'BAR'),
     ('right', 'SUP', 'SUB'),
-    )
+)
 
 
 def p_eqn(p):
@@ -322,7 +331,7 @@ current_size = default_size
 def p_size(p):
     'box : SIZE TEXT box'
     if re.match('^[+-]?[0-9]+$', p[2]) == None:
-        raise Exception('Invalid size parameter: ' + p[2])
+        raise EqnException('Invalid size parameter: ' + p[2])
     # TODO: check correctness of text size
     p[0] = eqnnode(p[1], p[2], *p[3])
 
@@ -431,7 +440,7 @@ def process_ast(tree, callbacks):
     for nodetype, args in pairwise(tree):
         transformed = process_ast(args, callbacks) if len(args) > 1 else args[0]
         if nodetype not in callbacks:
-            raise Exception('Undefined callback: ' + nodetype)
+            raise EqnException('Undefined callback: ' + nodetype)
         if type(transformed) == tuple:
             nodes.append(callbacks[nodetype](*transformed))
         else:
@@ -500,7 +509,7 @@ if __name__ == "__main__":
         'bracketed': bracketed,
         'special_char': lambda c: c,
         'size': text_size,
-        }
+    }
 
     def print_node(*args):
         for a in args:
@@ -632,7 +641,7 @@ if __name__ == "__main__":
                               'over', ('sup', ('text', ('x',), 'text', ('2',)),
                                        'text', ('2',)),
                               'right', ('>',)))
-                        ]
+            ]
 
             self._runtests(examples, expected)
 
