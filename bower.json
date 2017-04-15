@@ -25,6 +25,7 @@
     "requirejs": "^2.3.3",
     "katex": "^0.7.1",
     "codemirror": "^5.24.2",
-    "d3": "https://github.com/d3/d3.git#^4.7.4"
+    "d3": "https://github.com/d3/d3.git#^4.7.4",
+    "es6-promise": "^4.0.5"
   }
 }
