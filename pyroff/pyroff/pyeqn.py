@@ -168,7 +168,7 @@ def t_LARROW(t):
 
 
 def t_DOTS(t):
-    '\.\.\.'
+    r'\.\.\.'
     return t
 
 
@@ -438,7 +438,8 @@ def process_ast(tree, callbacks):
         return None
     nodes = []
     for nodetype, args in pairwise(tree):
-        transformed = process_ast(args, callbacks) if len(args) > 1 else args[0]
+        transformed = process_ast(
+            args, callbacks) if len(args) > 1 else args[0]
         if nodetype not in callbacks:
             raise EqnException('Undefined callback: ' + nodetype)
         if type(transformed) == tuple:
