@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-pyeqn a parser for the eqn language described in
-  A system for Typesetting Mathematics
-  Brian W. Kernighan and Lorinda L. Cherry
-  CACM, March, 1975
+PIC - A Language for Typesetting Graphics
+  Brian W. Kernighan
+  Software Practice Experience (12): 1–20, 1982
 
 Copyright (C) 2020
 Juan Pablo de la Cruz Gutiérrez
