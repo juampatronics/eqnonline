@@ -54,6 +54,19 @@ attributes = ['DASHED', 'DOTTED']
 default_radius = 0.25  # inches
 
 
+def gen_reserved_dict(words_list, lowercase=False):
+    return dict((k.lower() if lowercase else k, k) for k in words_list)
+
+
+reserved = gen_reserved_dict(commands, True)
+reserved.update(gen_reserved_dict(primitives, True))
+reserved.update(gen_reserved_dict(references, True))
+reserved.update(gen_reserved_dict(attributes, True))
+
+tokens = ['WIDTH', 'HEIGHT', 'RADIUS', 'DIAMETER', 'NUMBER', 'LABEL', 'CMDEND',
+          'FIRST', 'SECOND'] + list(reserved.values())
+
+
 def t_WIDTH(t):
     r'(width|wid)'
     # better return canonical form: 'width'
@@ -77,8 +90,9 @@ def t_DIAMETER(t):
 
 
 def t_NUMBER(t):
-    r'-?[0-9]*\.[0-9]+'
-    return float(t)
+    r'[0-9]*\.?[0-9]+'
+    t.value = float(t.value)
+    return t
 
 
 def t_LABEL(t):
@@ -101,9 +115,46 @@ def t_SECOND(t):
     return t
 
 
+def t_ANY_error(t):
+    print("Illegal character '%s' at line %d" % (t.value[0],
+                                                 t.lexer.lineno))
+
+
 tokenizer = lex.lex()
 
 if __name__ == "__main__":
     import unittest as ut
+
+    class TestLexer(ut.TestCase):
+        def setUp(self):
+            self.pixer = lex.lex()
+
+        def run_tests(self, cases, expected, tag):
+            for c, e in zip(cases, expected):
+                self.pixer.input(c)
+                token = next(self.pixer)
+                self.assertEqual(token.value, e)
+                self.assertEqual(token.type, tag)
+
+        def test_number(self):
+            cases = ['.1', '0.35', '545', '234.24545']
+            expected = [float(n) for n in cases]
+            self.run_tests(cases, expected, 'NUMBER')
+
+        def test_label(self):
+            cases = ['"valid"',
+                     '"valid23$%&/(fe"', '" wgökjwg ojwgog    jgnpgo"']
+            self.run_tests(cases, cases, 'LABEL')
+
+            for wrong in ['dwfewgf wdg', '"grg']:
+                with self.assertRaises(lex.LexError):
+                    self.pixer.input(wrong)
+                    next(self.pixer)
+
+        def test_reserved(self):
+            for txt in reserved:
+                self.pixer.input(txt)
+                token = next(self.pixer)
+                self.assertEqual(token.value, txt)
 
     ut.main()
