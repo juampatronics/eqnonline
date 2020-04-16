@@ -44,11 +44,12 @@ class PicException(Exception):
     'Trigger errors ought to wrong eqn syntax'
     pass
 
+t_ANY_ignore = ' \t'
 
 primitives = ['CIRCLE', 'ELLIPSE', 'LINE', 'ARC', 'ARROW', 'BOX', 'SPLINE']
 commands = ['ABOVE', 'BELOW', 'MOVE',
             'UP', 'DOWN', 'RIGHT', 'LEFT', 'THEN', 'SAME', 'END', 'TOP', 'BOTTOM']
-references = ['LAST', 'OF', 'FROM', 'TO']
+references = ['LAST', 'OF', 'FROM', 'TO', 'LOWER', 'UPPER']
 attributes = ['DASHED', 'DOTTED']
 default_radius = 0.25  # inches
 
@@ -64,11 +65,6 @@ reserved.update(gen_reserved_dict(attributes, True))
 
 tokens = ['WIDTH', 'HEIGHT', 'RADIUS', 'DIAMETER', 'NUMBER', 'LABEL', 'CMDEND',
           'FIRST', 'SECOND'] + list(reserved.values())
-
-def t_RESERVED(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = reserved.get(t.value, 'ID')
-    return t
 
 
 def t_WIDTH(t):
@@ -93,12 +89,6 @@ def t_DIAMETER(t):
     return t
 
 
-def t_NUMBER(t):
-    r'[0-9]*\.?[0-9]+'
-    t.value = float(t.value)
-    return t
-
-
 def t_LABEL(t):
     r'"[^"]+"'
     return t
@@ -117,6 +107,25 @@ def t_FIRST(t):
 def t_SECOND(t):
     r'(second|2nd)'
     return t
+
+
+def t_NUMBER(t):
+    r'[0-9]*\.?[0-9]+'
+    t.value = float(t.value)
+    return t
+
+
+def t_RESERVED(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value)
+    if not t.type:
+        raise lex.LexError('Unexpected token {}'.format(t.value), str(t))
+    return t
+
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
 
 def t_ANY_error(t):
@@ -214,8 +223,8 @@ if __name__ == "__main__":
             cases = ['''ellipse
 move down 1.25
 circle radius .35
-move left 1i from left of last circle; box
-arrow from lower left of las ellipse to top of 1st box''']
+move left 1 from left of last circle; box
+arrow from lower left of last ellipse to top of 1st box''']
             for txt in cases:
                 self.pixer.input(txt)
                 [t for t in self.pixer]
