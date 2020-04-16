@@ -65,6 +65,11 @@ reserved.update(gen_reserved_dict(attributes, True))
 tokens = ['WIDTH', 'HEIGHT', 'RADIUS', 'DIAMETER', 'NUMBER', 'LABEL', 'CMDEND',
           'FIRST', 'SECOND'] + list(reserved.values())
 
+def t_RESERVED(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value, 'ID')
+    return t
+
 
 def t_WIDTH(t):
     r'(width|wid)'
@@ -155,5 +160,16 @@ if __name__ == "__main__":
                 self.pixer.input(txt)
                 token = next(self.pixer)
                 self.assertEqual(token.value, txt)
+
+        def test_fullcommands(self):
+            _cases = ['''ellipse
+move down 1.25
+circle radius .35
+move left 1i from left of last circle; box
+arrow from lower left of las ellipse to top of 1st box''']
+            cases = ['''ellipse''']
+            for txt in cases:
+                self.pixer.input(txt)
+                next(self.pixer)
 
     ut.main()
