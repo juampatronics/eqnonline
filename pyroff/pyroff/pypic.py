@@ -126,6 +126,54 @@ def t_ANY_error(t):
 
 tokenizer = lex.lex()
 
+# parser ============================================================
+
+def picnode(ntype, *args):
+    return (ntype, args)
+
+
+def p_error(p):
+    print("Error while parsing : ", p)
+
+
+def p_pic(p):
+    '''pic : direction pic
+           | primitive pic
+           |'''
+    p[0] = p[1] + p[2]
+
+
+def p_direction(p):
+    '''direction : DOWN
+                 | UP
+                 | RIGHT
+                 | LEFT'''
+    p[0] = eqnnode('direction', p[1])
+
+
+def p_primitive(p):
+    '''primitive : circle
+                 | line'''
+    p[0] = eqnnode('primitive', p[1])
+
+
+def p_circle(p):
+    '''circle : CIRCLE cattr
+              | CIRCLE'''
+    p[0] = eqnnode('circle', *p[2]) if len(p) > 2 else eqnnode('cicle', None)
+
+
+def p_cattr(p):
+    '''cattr : RADIUS NUMBER
+             | LABEL'''
+    p[0] = eqnnode('cattr', *p[1:])
+
+
+def p_line(p):
+    '''line : LINE'''
+    p[0] = eqnnode('line', None)
+
+
 if __name__ == "__main__":
     import unittest as ut
 
@@ -163,14 +211,30 @@ if __name__ == "__main__":
                 self.assertEqual(token.type, txt.upper())
 
         def test_fullcommands(self):
-            _cases = ['''ellipse
+            cases = ['''ellipse
 move down 1.25
 circle radius .35
 move left 1i from left of last circle; box
 arrow from lower left of las ellipse to top of 1st box''']
-            cases = ['''ellipse''']
             for txt in cases:
                 self.pixer.input(txt)
-                next(self.pixer)
+                [t for t in self.pixer]
+
+    class TestParser(ut.TestCase):
+        def setUp(self):
+            self._parser = yacc.yacc(start='pic')
+
+        def test_buildgrammar(self):
+            pass
+
+        def test_circle(self):
+            examples = ['circle', 'down ; circle', 'circle radius 0.5']
+            expected = []
+
+        def _test_badgrammar(self):
+            examples = ['circle 0.5']
+            for s in examples:
+                with self.assertRaises(yacc.YaccError):
+                    self._parser.parse(s)
 
     ut.main()
