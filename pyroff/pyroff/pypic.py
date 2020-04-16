@@ -148,7 +148,7 @@ def p_error(p):
 def p_pic(p):
     '''pic : element
            | element pic'''
-    p[0] = p[1] + p[2] if p[2] else p[1]
+    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
 def p_element(p):
@@ -244,7 +244,7 @@ arrow from lower left of last ellipse to top of 1st box''']
 
         def test_circle(self):
             examples = ['circle', 'down ; circle', 'circle radius 0.5']
-            expected = [('circle', (None,)), ('down', 'circle'), ()]
+            expected = [('primitive', ('circle', (None,))), ('down', 'circle'), ()]
             for case, must in zip(examples, expected):
                 print('about to parse: ' + case)
                 t = self._parser.parse(case)
