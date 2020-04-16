@@ -95,7 +95,7 @@ def t_LABEL(t):
 
 
 def t_CMDEND(t):
-    r';'
+    r'(;|\n)'
     return t
 
 
@@ -146,10 +146,15 @@ def p_error(p):
 
 
 def p_pic(p):
-    '''pic : direction pic
-           | primitive pic
-           |'''
-    p[0] = p[1] + p[2]
+    '''pic : element
+           | element pic'''
+    p[0] = p[1] + p[2] if p[2] else p[1]
+
+
+def p_element(p):
+    '''element : direction
+               | primitive'''
+    p[0] = p[1]
 
 
 def p_direction(p):
@@ -157,30 +162,30 @@ def p_direction(p):
                  | UP
                  | RIGHT
                  | LEFT'''
-    p[0] = eqnnode('direction', p[1])
+    p[0] = picnode('direction', *p[1])
 
 
 def p_primitive(p):
     '''primitive : circle
                  | line'''
-    p[0] = eqnnode('primitive', p[1])
+    p[0] = picnode('primitive', *p[1])
 
 
 def p_circle(p):
     '''circle : CIRCLE cattr
               | CIRCLE'''
-    p[0] = eqnnode('circle', *p[2]) if len(p) > 2 else eqnnode('cicle', None)
+    p[0] = picnode('circle', *p[2]) if len(p) > 2 else picnode('circle', None)
 
 
 def p_cattr(p):
     '''cattr : RADIUS NUMBER
              | LABEL'''
-    p[0] = eqnnode('cattr', *p[1:])
+    p[0] = picnode('cattr', *p[1:])
 
 
 def p_line(p):
     '''line : LINE'''
-    p[0] = eqnnode('line', None)
+    p[0] = picnode('line', None)
 
 
 if __name__ == "__main__":
@@ -234,11 +239,17 @@ arrow from lower left of last ellipse to top of 1st box''']
             self._parser = yacc.yacc(start='pic')
 
         def test_buildgrammar(self):
+            # just checks that the grammar compiles
             pass
 
         def test_circle(self):
             examples = ['circle', 'down ; circle', 'circle radius 0.5']
-            expected = []
+            expected = [('circle', (None,)), ('down', 'circle'), ()]
+            for case, must in zip(examples, expected):
+                print('about to parse: ' + case)
+                t = self._parser.parse(case)
+                print(t, ' expected ', must)
+                self.assertEqual(t, must)
 
         def _test_badgrammar(self):
             examples = ['circle 0.5']
