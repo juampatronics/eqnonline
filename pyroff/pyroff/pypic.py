@@ -148,13 +148,21 @@ def p_error(p):
 def p_pic(p):
     '''pic : element
            | element pic'''
-    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
+    p[0] = p[1] + p[2] if len(p) > 2 and p[2] != ';'  else p[1]
 
 
 def p_element(p):
-    '''element : direction
+    '''element : newelem
+               | direction
                | primitive'''
     p[0] = p[1]
+
+
+def p_newelem(p):
+    'newelem : element'
+    # why do we exactly need the semicolon?
+    # can we ignore it?
+    pass
 
 
 def p_direction(p):
@@ -162,7 +170,7 @@ def p_direction(p):
                  | UP
                  | RIGHT
                  | LEFT'''
-    p[0] = picnode('direction', *p[1])
+    p[0] = picnode('direction', p[1])
 
 
 def p_primitive(p):
@@ -244,7 +252,9 @@ arrow from lower left of last ellipse to top of 1st box''']
 
         def test_circle(self):
             examples = ['circle', 'down ; circle', 'circle radius 0.5']
-            expected = [('primitive', ('circle', (None,))), ('down', 'circle'), ()]
+            expected = [('primitive', ('circle', (None,))),
+                        ('direction', ('down',), 'primitive', ('circle', (None,))),
+                        ()]
             for case, must in zip(examples, expected):
                 print('about to parse: ' + case)
                 t = self._parser.parse(case)
