@@ -160,6 +160,7 @@ if __name__ == "__main__":
                 self.pixer.input(txt)
                 token = next(self.pixer)
                 self.assertEqual(token.value, txt)
+                self.assertEqual(token.type, txt.upper())
 
         def test_fullcommands(self):
             _cases = ['''ellipse
