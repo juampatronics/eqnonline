@@ -34,7 +34,7 @@ shift $((OPTIND-1))
 
 
 # modules=$(ls pyroff/*py | tr '/' '.' | sed 's,\.py$,,' | xargs)
-modules="pyeqn pytbl eqn2latex tbl2html ast eqn"
+modules="pyeqn pytbl eqn2latex tbl2html ast eqn pypic"
 
 for mod in $modules
 do
