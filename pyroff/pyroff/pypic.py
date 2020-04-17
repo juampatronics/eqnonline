@@ -253,6 +253,13 @@ arrow from lower left of last ellipse to top of 1st box''']
     class TestParser(ut.TestCase):
         def setUp(self):
             self._parser = yacc.yacc(start='pic')
+        
+        def run_tests(self, examples, expected):
+            for case, must in zip(examples, expected):
+                print('about to parse: ' + case)
+                t = self._parser.parse(case)
+                print(t, ' expected ', must)
+                self.assertEqual(t, must)
 
         def test_buildgrammar(self):
             # just checks that the grammar compiles
@@ -263,11 +270,12 @@ arrow from lower left of last ellipse to top of 1st box''']
             expected = [('primitive', ('circle', (None,))),
                         ('direction', ('down',), 'primitive', ('circle', (None,))),
                         ('primitive', ('circle', ('cattr', ('radius', 0.5))))]
-            for case, must in zip(examples, expected):
-                print('about to parse: ' + case)
-                t = self._parser.parse(case)
-                print(t, ' expected ', must)
-                self.assertEqual(t, must)
+            self.run_tests(examples, expected)
+
+        def test_box(self):
+            examples = []
+            expected = []
+            self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
             examples = ['circle 0.5']
