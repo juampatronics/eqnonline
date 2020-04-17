@@ -92,6 +92,7 @@ def t_DIAMETER(t):
 
 def t_LABEL(t):
     r'"[^"]+"'
+    t.value = t.value[1:-1]
     return t
 
 
@@ -179,7 +180,8 @@ def p_direction(p):
 
 def p_primitive(p):
     '''primitive : circle
-                 | line'''
+                 | line
+                 | box'''
     print('p_primitive: ', *p)
     p[0] = picnode('primitive', *p[1])
 
@@ -193,15 +195,35 @@ def p_circle(p):
 
 def p_cattr(p):
     '''cattr : RADIUS NUMBER
-             | LABEL'''
+             | label'''
     print('p_cattr: ', *p)
     p[0] = picnode('cattr', *p[1:])
+
+
+def p_label(p):
+    'label : LABEL'
+    p[0] = picnode('label', p[1])
 
 
 def p_line(p):
     '''line : LINE'''
     print('p_line: ', *p)
     p[0] = picnode('line', None)
+
+
+def p_box(p):
+    '''box : BOX battr
+           | BOX'''
+    print('p_box: ', *p)
+    p[0] = picnode('box', *p[2]) if len(p) > 2 else picnode('box', None)
+
+
+def p_battr(p):
+    '''battr : WIDTH NUMBER
+             | HEIGHT NUMBER
+             | label'''
+    print('p_battr: ', *p)
+    p[0] = picnode('battr', *p[1:])
 
 
 if __name__ == "__main__":
@@ -253,7 +275,7 @@ arrow from lower left of last ellipse to top of 1st box''']
     class TestParser(ut.TestCase):
         def setUp(self):
             self._parser = yacc.yacc(start='pic')
-        
+
         def run_tests(self, examples, expected):
             for case, must in zip(examples, expected):
                 print('about to parse: ' + case)
@@ -266,15 +288,24 @@ arrow from lower left of last ellipse to top of 1st box''']
             pass
 
         def test_circle(self):
-            examples = ['circle', 'down ; circle', 'circle radius 0.5']
+            examples = ['circle', 'down ; circle',
+                        'circle radius 0.5', 'circle "A"',
+                        'circle rad .5 "label 1" "label 2"']
             expected = [('primitive', ('circle', (None,))),
                         ('direction', ('down',), 'primitive', ('circle', (None,))),
-                        ('primitive', ('circle', ('cattr', ('radius', 0.5))))]
+                        ('primitive', ('circle', ('cattr', ('radius', 0.5)))),
+                        ('primitive', ('circle', ('cattr', ('label', 'A')))),
+                        ()]
             self.run_tests(examples, expected)
 
         def test_box(self):
-            examples = []
-            expected = []
+            examples = ['box', 'box height l width .5',
+                        'box ht .75 "Square One"',
+                        'box wid .5 "Second" "Square"']
+            expected = [('primitive', ('box', (None,))),
+                        ('primitive', ('box', ('battr', ('height', 1, 'width', 0.5)))),
+                        (),
+                        ()]
             self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
