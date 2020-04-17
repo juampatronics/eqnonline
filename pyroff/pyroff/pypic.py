@@ -44,6 +44,7 @@ class PicException(Exception):
     'Trigger errors ought to wrong eqn syntax'
     pass
 
+
 t_ANY_ignore = ' \t'
 
 primitives = ['CIRCLE', 'ELLIPSE', 'LINE', 'ARC', 'ARROW', 'BOX', 'SPLINE']
@@ -137,6 +138,7 @@ tokenizer = lex.lex()
 
 # parser ============================================================
 
+
 def picnode(ntype, *args):
     return (ntype, args)
 
@@ -148,21 +150,22 @@ def p_error(p):
 def p_pic(p):
     '''pic : element
            | element pic'''
-    p[0] = p[1] + p[2] if len(p) > 2 and p[2] != ';'  else p[1]
+    print('p_pic: ', *p)
+    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
 def p_element(p):
-    '''element : newelem
+    '''element : nextcmd
                | direction
                | primitive'''
+    print('p_element: ', *p)
     p[0] = p[1]
 
 
-def p_newelem(p):
-    'newelem : element'
-    # why do we exactly need the semicolon?
-    # can we ignore it?
-    pass
+def p_nextcmd(p):
+    'nextcmd : CMDEND element'
+    print('p_nextcmd: ', *p)
+    p[0] = p[2]
 
 
 def p_direction(p):
@@ -170,29 +173,34 @@ def p_direction(p):
                  | UP
                  | RIGHT
                  | LEFT'''
+    print('p_direction: ', *p)
     p[0] = picnode('direction', p[1])
 
 
 def p_primitive(p):
     '''primitive : circle
                  | line'''
+    print('p_primitive: ', *p)
     p[0] = picnode('primitive', *p[1])
 
 
 def p_circle(p):
     '''circle : CIRCLE cattr
               | CIRCLE'''
+    print('p_circle: ', *p)
     p[0] = picnode('circle', *p[2]) if len(p) > 2 else picnode('circle', None)
 
 
 def p_cattr(p):
     '''cattr : RADIUS NUMBER
              | LABEL'''
+    print('p_cattr: ', *p)
     p[0] = picnode('cattr', *p[1:])
 
 
 def p_line(p):
     '''line : LINE'''
+    print('p_line: ', *p)
     p[0] = picnode('line', None)
 
 
@@ -254,7 +262,7 @@ arrow from lower left of last ellipse to top of 1st box''']
             examples = ['circle', 'down ; circle', 'circle radius 0.5']
             expected = [('primitive', ('circle', (None,))),
                         ('direction', ('down',), 'primitive', ('circle', (None,))),
-                        ()]
+                        ('primitive', ('circle', ('cattr', ('radius', 0.5))))]
             for case, must in zip(examples, expected):
                 print('about to parse: ' + case)
                 t = self._parser.parse(case)
