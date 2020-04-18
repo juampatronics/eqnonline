@@ -118,7 +118,7 @@ def t_NUMBER(t):
 
 
 def t_RESERVED(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    r'[a-z0-9]+'
     t.type = reserved.get(t.value)
     if not t.type:
         raise lex.LexError('Unexpected token {}'.format(t.value), str(t))
@@ -141,7 +141,9 @@ tokenizer = lex.lex()
 
 
 def picnode(ntype, *args):
-    return (ntype, args)
+    if len(args) > 1:
+        return (ntype, args)
+    return (ntype, args[0])
 
 
 def p_error(p):
@@ -187,22 +189,31 @@ def p_primitive(p):
 
 
 def p_circle(p):
-    '''circle : CIRCLE cattr
+    '''circle : CIRCLE cattrs
               | CIRCLE'''
     print('p_circle: ', *p)
     p[0] = picnode('circle', *p[2]) if len(p) > 2 else picnode('circle', None)
+
+
+def p_cattrs(p):
+    '''cattrs : cattr cattrs
+              | cattr'''
+    print('p_cattrs: ', *p)
+    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
 def p_cattr(p):
     '''cattr : RADIUS NUMBER
              | label'''
     print('p_cattr: ', *p)
-    p[0] = picnode('cattr', *p[1:])
+    p[0] = picnode('cattr', *p[1:] if len(p) > 2 else p[1])
 
 
 def p_label(p):
-    'label : LABEL'
-    p[0] = picnode('label', p[1])
+    '''label : LABEL label
+             | LABEL'''
+    print('p_label: ', *p)
+    p[0] = picnode('label', *p[1:] if len(p) > 2 else (p[1],))
 
 
 def p_line(p):
@@ -212,10 +223,17 @@ def p_line(p):
 
 
 def p_box(p):
-    '''box : BOX battr
+    '''box : BOX battrs
            | BOX'''
     print('p_box: ', *p)
     p[0] = picnode('box', *p[2]) if len(p) > 2 else picnode('box', None)
+
+
+def p_battrs(p):
+    '''battrs : battr battrs
+              | battr'''
+    print('p_cattrs: ', *p)
+    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
 
 
 def p_battr(p):
@@ -223,7 +241,7 @@ def p_battr(p):
              | HEIGHT NUMBER
              | label'''
     print('p_battr: ', *p)
-    p[0] = picnode('battr', *p[1:])
+    p[0] = picnode('battr', *p[1:] if len(p) > 2 else p[1])
 
 
 if __name__ == "__main__":
@@ -248,7 +266,8 @@ if __name__ == "__main__":
         def test_label(self):
             cases = ['"valid"',
                      '"valid23$%&/(fe"', '" wgökjwg ojwgog    jgnpgo"']
-            self.run_tests(cases, cases, 'LABEL')
+            expected = [s[1:-1] for s in cases]
+            self.run_tests(cases, expected, 'LABEL')
 
             for wrong in ['dwfewgf wdg', '"grg']:
                 with self.assertRaises(lex.LexError):
@@ -289,23 +308,30 @@ arrow from lower left of last ellipse to top of 1st box''']
 
         def test_circle(self):
             examples = ['circle', 'down ; circle',
-                        'circle radius 0.5', 'circle "A"',
+                        'circle radius 0.5', 'circle "ABC"',
                         'circle rad .5 "label 1" "label 2"']
-            expected = [('primitive', ('circle', (None,))),
-                        ('direction', ('down',), 'primitive', ('circle', (None,))),
+            expected = [('primitive', ('circle', None)),
+                        ('direction', ('down',), 'primitive', ('circle', None)),
                         ('primitive', ('circle', ('cattr', ('radius', 0.5)))),
-                        ('primitive', ('circle', ('cattr', ('label', 'A')))),
-                        ()]
+                        ('primitive', ('circle', ('cattr', ('label', 'ABC')))),
+                        ('primitive',
+                         ('circle', ('cattr', ('radius', 0.5), ('label', 'label 1'),
+                                     ('label', 'label 2'))))]
+            examples = ['circle "ABC"']
+            expected = [('primitive', ('circle', ('cattr', ('label', 'ABC'))))]
             self.run_tests(examples, expected)
 
         def test_box(self):
-            examples = ['box', 'box height l width .5',
+            examples = ['box', 'box "label 1"',
+                        'box height l width .5',
                         'box ht .75 "Square One"',
                         'box wid .5 "Second" "Square"']
-            expected = [('primitive', ('box', (None,))),
-                        ('primitive', ('box', ('battr', ('height', 1, 'width', 0.5)))),
-                        (),
-                        ()]
+            expected = [('primitive', ('box', None)),
+                        ('primitive', ('box', ('battr', ('label', 'label 1')))),
+                        ('primitive', ('box', ('battr', ('height', 1, 'width', 0.5))))]
+            examples = ['box "label 1"']
+            expected = [
+                ('primitive', ('box', ('battr', ('label', 'label 1'))))]
             self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
