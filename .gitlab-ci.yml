@@ -10,13 +10,13 @@ stages:
 job1:
   stage: test
   script:
-    - python3 -m pyroff.pyeqn
-    - python3 -m pyroff.eqn2latex
-    - python3 -m pyroff.pytbl
-    - python3 -m pyroff.tbl2html
-    - python3 -m pyroff.ast
-    - python3 -m pyroff.eqn
-    - python3 -m pyroff.tbllexer
+    - python3 -m pyroff.pyroff.pyeqn
+    - python3 -m pyroff.pyroff.eqn2latex
+    - python3 -m pyroff.pyroff.pytbl
+    - python3 -m pyroff.pyroff.tbl2html
+    - python3 -m pyroff.pyroff.ast
+    - python3 -m pyroff.pyroff.eqn
+    - python3 -m pyroff.pyroff.tbllexer
   only:
     - master
   tags:
