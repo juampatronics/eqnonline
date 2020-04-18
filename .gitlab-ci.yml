@@ -17,6 +17,7 @@ job1:
     - python3 -m pyroff.pyroff.ast
     - python3 -m pyroff.pyroff.eqn
     - python3 -m pyroff.pyroff.tbllexer
+    - python3 -m pyroff.pyroff.pypic
   only:
     - master
   tags:
