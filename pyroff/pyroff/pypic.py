@@ -141,9 +141,7 @@ tokenizer = lex.lex()
 
 
 def picnode(ntype, *args):
-    if len(args) > 1:
-        return (ntype, args)
-    return (ntype, args[0])
+    return (ntype, args)
 
 
 def p_error(p):
@@ -206,14 +204,15 @@ def p_cattr(p):
     '''cattr : RADIUS NUMBER
              | label'''
     print('p_cattr: ', *p)
-    p[0] = picnode('cattr', *p[1:] if len(p) > 2 else p[1])
+    p[0] = picnode('radius', p[2]) if len(p) > 2 else p[1]
 
 
 def p_label(p):
     '''label : LABEL label
              | LABEL'''
     print('p_label: ', *p)
-    p[0] = picnode('label', *p[1:] if len(p) > 2 else (p[1],))
+    p[0] = picnode('label', p[1]) + \
+        p[2] if len(p) > 2 else picnode('label', p[1])
 
 
 def p_line(p):
@@ -241,7 +240,13 @@ def p_battr(p):
              | HEIGHT NUMBER
              | label'''
     print('p_battr: ', *p)
-    p[0] = picnode('battr', *p[1:] if len(p) > 2 else p[1])
+    p[0] = picnode(p[1], p[2]) if len(p) > 2 else p[1]
+
+
+# converter =========================================================
+
+class PicTranslator:
+    expected = ['circle', 'box', 'radius', 'width', 'height', 'label']
 
 
 if __name__ == "__main__":
@@ -310,28 +315,25 @@ arrow from lower left of last ellipse to top of 1st box''']
             examples = ['circle', 'down ; circle',
                         'circle radius 0.5', 'circle "ABC"',
                         'circle rad .5 "label 1" "label 2"']
-            expected = [('primitive', ('circle', None)),
-                        ('direction', ('down',), 'primitive', ('circle', None)),
-                        ('primitive', ('circle', ('cattr', ('radius', 0.5)))),
-                        ('primitive', ('circle', ('cattr', ('label', 'ABC')))),
-                        ('primitive',
-                         ('circle', ('cattr', ('radius', 0.5), ('label', 'label 1'),
-                                     ('label', 'label 2'))))]
-            examples = ['circle "ABC"']
-            expected = [('primitive', ('circle', ('cattr', ('label', 'ABC'))))]
+            expected = [('primitive', ('circle', (None,))),
+                        ('direction', ('down',), 'primitive', ('circle', (None,))),
+                        ('primitive', ('circle', ('radius', (0.5,)))),
+                        ('primitive', ('circle', ('label', ('ABC',)))),
+                        ('primitive', ('circle', ('radius', (0.5,), 'label', ('label 1',),
+                                                  'label', ('label 2',))))]
             self.run_tests(examples, expected)
 
         def test_box(self):
             examples = ['box', 'box "label 1"',
-                        'box height l width .5',
+                        'box height 1 width .5',
                         'box ht .75 "Square One"',
                         'box wid .5 "Second" "Square"']
-            expected = [('primitive', ('box', None)),
-                        ('primitive', ('box', ('battr', ('label', 'label 1')))),
-                        ('primitive', ('box', ('battr', ('height', 1, 'width', 0.5))))]
-            examples = ['box "label 1"']
-            expected = [
-                ('primitive', ('box', ('battr', ('label', 'label 1'))))]
+            expected = [('primitive', ('box', (None,))),
+                        ('primitive', ('box', ('label', ('label 1',)))),
+                        ('primitive', ('box', ('height', (1.0,), 'width', (0.5,)))),
+                        ('primitive', ('box', ('ht', (0.75,), 'label', ('Square One',)))),
+                        ('primitive', ('box', ('wid', (0.5,), 'label', ('Second',),
+                                               'label', ('Square',))))]
             self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
