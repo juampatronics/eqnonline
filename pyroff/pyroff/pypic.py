@@ -216,9 +216,36 @@ def p_label(p):
 
 
 def p_line(p):
-    '''line : LINE'''
+    '''line : LINE lattrs
+            | LINE'''
     print('p_line: ', *p)
-    p[0] = picnode('line', None)
+    p[0] = picnode('line', *p[2]) if len(p) > 2 else picnode('line', None)
+
+
+def p_lattrs(p):
+    '''lattrs : lattr lattrs
+              | lattr'''
+    print('p_lattrs: ', *p)
+    p[0] = p[1] + p[2] if len(p) > 2 else p[1]
+
+
+def p_lattr(p):
+    '''lattr : lstyle
+             | LABEL tposition'''
+    p[0] = picnode(p[1], p[2]) if len(p) > 2 else p[1]
+
+
+def p_tposition(p):
+    '''tposition : ABOVE
+                 | BELOW'''
+    p[0] = picnode('tposition', p[1])
+
+
+def p_lstyle(p):
+    '''lstyle : DOTTED
+              | DASHED'''
+    print('p_lstyle: ', *p)
+    p[0] = picnode('lstyle', p[1])
 
 
 def p_box(p):
@@ -334,6 +361,11 @@ arrow from lower left of last ellipse to top of 1st box''']
                         ('primitive', ('box', ('ht', (0.75,), 'label', ('Square One',)))),
                         ('primitive', ('box', ('wid', (0.5,), 'label', ('Second',),
                                                'label', ('Square',))))]
+            self.run_tests(examples, expected)
+
+        def test_line(self):
+            examples = ['line']
+            expected = [('primitive', ('line', (None,)))]
             self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
