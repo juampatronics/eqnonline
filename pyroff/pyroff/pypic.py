@@ -162,7 +162,8 @@ def p_pic(p):
 def p_element(p):
     '''element : nextcmd
                | direction
-               | primitive'''
+               | primitive
+               | move'''
     print('p_element: ', *p)
     p[0] = p[1]
 
@@ -275,6 +276,17 @@ def p_battr(p):
              | label'''
     print('p_battr: ', *p)
     p[0] = picnode(p[1], p[2]) if len(p) > 2 else p[1]
+
+
+def p_single_move(p):
+    'move : MOVE'
+    p[0] = picnode('move', None)
+
+
+def p_move_dist(p):
+    '''move : MOVE direction
+            | MOVE direction NUMBER'''
+    raise NotImplemented('p_move_dist')
 
 
 # converter =========================================================
