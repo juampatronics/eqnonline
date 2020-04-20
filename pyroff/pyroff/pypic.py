@@ -70,13 +70,13 @@ tokens = ['WIDTH', 'HEIGHT', 'RADIUS', 'DIAMETER', 'NUMBER', 'LABEL', 'CMDEND',
 
 def t_WIDTH(t):
     r'(width|wid)'
-    # better return canonical form: 'width'
+    t.value = 'width'
     return t
 
 
 def t_HEIGHT(t):
     r'(height|ht)'
-    # better return canonical form
+    t.value = 'height'
     return t
 
 
@@ -232,12 +232,14 @@ def p_lattrs(p):
 def p_lattr(p):
     '''lattr : lstyle
              | LABEL tposition'''
-    p[0] = picnode(p[1], p[2]) if len(p) > 2 else p[1]
+    print('p_lattr: ', *p)
+    p[0] = picnode('label', p[1]) + p[2] if len(p) > 2 else p[1]
 
 
 def p_tposition(p):
     '''tposition : ABOVE
                  | BELOW'''
+    print('p_tposition: ', *p)
     p[0] = picnode('tposition', p[1])
 
 
@@ -265,6 +267,7 @@ def p_battrs(p):
 def p_battr(p):
     '''battr : WIDTH NUMBER
              | HEIGHT NUMBER
+             | lstyle
              | label'''
     print('p_battr: ', *p)
     p[0] = picnode(p[1], p[2]) if len(p) > 2 else p[1]
@@ -354,18 +357,25 @@ arrow from lower left of last ellipse to top of 1st box''']
             examples = ['box', 'box "label 1"',
                         'box height 1 width .5',
                         'box ht .75 "Square One"',
-                        'box wid .5 "Second" "Square"']
+                        'box wid .5 "Second" "Square"',
+                        'box dotted "klmmlkwe"']
             expected = [('primitive', ('box', (None,))),
                         ('primitive', ('box', ('label', ('label 1',)))),
-                        ('primitive', ('box', ('height', (1.0,), 'width', (0.5,)))),
-                        ('primitive', ('box', ('ht', (0.75,), 'label', ('Square One',)))),
-                        ('primitive', ('box', ('wid', (0.5,), 'label', ('Second',),
-                                               'label', ('Square',))))]
+                        ('primitive', ('box', ('height', (1.0,),
+                                               'width', (0.5,)))),
+                        ('primitive', ('box', ('height', (0.75,),
+                                               'label', ('Square One',)))),
+                        ('primitive', ('box', ('width', (0.5,), 'label', ('Second',),
+                                               'label', ('Square',)))),
+                        ('primitive', ('box', ('lstyle', ('dotted',),
+                                               'label', ("klmmlkwe",))))]
             self.run_tests(examples, expected)
 
         def test_line(self):
-            examples = ['line']
-            expected = [('primitive', ('line', (None,)))]
+            examples = ['line', 'line "a label" above']
+            expected = [('primitive', ('line', (None,))),
+                        ('primitive', ('line', ('label', ('a label',),
+                                                'tposition', ('above',))))]
             self.run_tests(examples, expected)
 
         def _test_badgrammar(self):
