@@ -82,11 +82,13 @@ def t_HEIGHT(t):
 
 def t_RADIUS(t):
     r'(radius|rad)'
+    t.value = 'radius'
     return t
 
 
 def t_DIAMETER(t):
     r'(diameter|diam)'
+    t.value = 'diameter'
     return t
 
 
@@ -103,11 +105,13 @@ def t_CMDEND(t):
 
 def t_FIRST(t):
     r'(first|1st)'
+    t.value = 'first'
     return t
 
 
 def t_SECOND(t):
     r'(second|2nd)'
+    t.value = 'second'
     return t
 
 
