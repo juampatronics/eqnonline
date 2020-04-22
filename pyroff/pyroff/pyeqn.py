@@ -478,7 +478,7 @@ class EqnTranslator(object):
 
             def translate_file(self, filename):
                 with open(filename, 'r') as f:
-                    return self.translate(self.parse(f.readlines()))
+                    return self.translate(self._parser.parse(f.readlines()))
 
         return Converter(module, prefix)
 
