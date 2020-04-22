@@ -37,22 +37,41 @@ import sys
 
 def pic_circle(*args):
     print('circle: ', *args)
-    return r'<circle {} />'.format(' '.join(args))
+    if args[0] is None:
+        return (r'<circle />',)
+
+    code = '<circle '
+    rest = []
+    for eltype, value in args:
+        if eltype == 'attribute':
+            code = code + r' ' + value
+        else:
+            # need to make sure that cx, cy is the same for circle and text
+            # with <text ... text-anchor="middle" dy=".3em">...</text>
+            rest.append(value)
+    return code + r' />' if len(rest) == 0 else code + r'/>', rest
 
 
 def pic_radius(*args):
     print('radius: ', *args)
-    return r'r="{}"'.format(*args)
+    return ('attribute', r'r="{}"'.format(*args))
 
 
 def pic_label(*args):
+    # https://stackoverflow.com/questions/28128491/svg-center-text-in-circle
+    # https://www.mediaevent.de/tutorial/svg-text-alignment.html
     print('label: ', *args)
-    return r'<text>{}</text>'.format(*args)
+    return ('label', r'<text>{}</text>'.format(*args))
 
 
 def pic_primitive(*args):
     print('primitive: ', *args)
-    return r'\n'.join(args)
+    primitive, *elements = args[0]
+    if not elements:
+        return primitive
+    else:
+        return '\n'.join((r'<g>', primitive,
+                          '\n'.join(elements[0]), r'</g>'))
 
 
 class Pic2SVG:
@@ -72,8 +91,8 @@ class Pic2SVG:
         self._footer = '</svg>'
 
     def translate(self, s):
-        return '{}\n{}\n{}'.format(
-            self._header, self._translator.translate(s), self._footer)
+        return r'\n'.join((
+            self._header, self._translator.translate(s), self._footer))
 
     def translate_file(self, filename):
         return self._translator.translate_file(filename)
@@ -81,4 +100,6 @@ class Pic2SVG:
 
 if __name__ == "__main__":
     compiler = Pic2SVG()
-    print(compiler.translate('circle radius 0.5 "A"'))
+    cases = ['circle radius 0.5 "A"', 'circle radius 0.5', 'circle']
+    for example in cases:
+        print(compiler.translate(example))
