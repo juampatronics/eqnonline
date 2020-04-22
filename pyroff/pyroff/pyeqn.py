@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ply import lex
 from ply import yacc
 import re
-import inspect
+from .utils import Translator, process_ast
 
 
 class EqnException(Exception):
@@ -424,63 +424,12 @@ def p_brackets(p):
         p[0] = eqnnode('brackets', *(eqnnode(p[1], p[2]) + p[3]))
 
 
-# converter =========================================================
-
-
-def pairwise(iterable):
-    'iterates over pairs (a0, a1), (a2, a3), ...'
-    a = iter(iterable)
-    return zip(a, a)
-
-
-def process_ast(tree, callbacks):
-    if tree is None or callbacks is None:
-        return None
-    nodes = []
-    for nodetype, args in pairwise(tree):
-        transformed = process_ast(
-            args, callbacks) if len(args) > 1 else args[0]
-        if nodetype not in callbacks:
-            raise EqnException('Undefined callback: ' + nodetype)
-        if type(transformed) == tuple:
-            nodes.append(callbacks[nodetype](*transformed))
-        else:
-            nodes.append(callbacks[nodetype](transformed))
-    return tuple(nodes)
-
-
-class EqnTranslator(object):
-    expected = ['text', 'special_char', 'bracketed', 'hat', 'bar', 'dot',
-                'under', 'tilde', 'roman', 'italic', 'bold', 'size', 'sub',
-                'sup', 'sum', 'prod', 'int', 'from', 'to', 'sqrt', 'over',
-                'above', 'pile', 'rpile', 'lpile', 'cpile', 'brackets',
-                'mathop', 'left', 'right']
-
-    def custom(self, module, prefix=None):
-        class Converter(object):
-            def __init__(self, pymodule, prefix=None):
-                self._parser = yacc.yacc(start='eqn',
-                                         debug=False, optimize=True)
-                members = inspect.getmembers(pymodule)
-                if prefix is not None:
-                    self._callbacks = dict((re.sub(prefix, '', name), handler)
-                                           for name, handler in members
-                                           if re.sub(prefix, '', name)
-                                           in EqnTranslator.expected)
-                else:
-                    self._callbacks = dict((name, handler)
-                                           for name, handler in members if name
-                                           in EqnTranslator.expected)
-
-            def translate(self, s):
-                t = self._parser.parse(s)
-                return ' '.join(process_ast(t, self._callbacks))
-
-            def translate_file(self, filename):
-                with open(filename, 'r') as f:
-                    return self.translate(self._parser.parse(f.readlines()))
-
-        return Converter(module, prefix)
+treebuilder = Translator(yacc.yacc(start='eqn'),
+                         ['text', 'special_char', 'bracketed', 'hat', 'bar', 'dot',
+                          'under', 'tilde', 'roman', 'italic', 'bold', 'size', 'sub',
+                          'sup', 'sum', 'prod', 'int', 'from', 'to', 'sqrt', 'over',
+                          'above', 'pile', 'rpile', 'lpile', 'cpile', 'brackets',
+                          'mathop', 'left', 'right'])
 
 
 if __name__ == "__main__":

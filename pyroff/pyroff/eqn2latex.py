@@ -32,7 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from .pyeqn import EqnTranslator, EqnException
+from .pyeqn import EqnException, treebuilder
 import sys
 import re
 
@@ -128,10 +128,9 @@ def eqn_brackets(*args):
     return ' '.join(args)
 
 
-class Eqn2Latex(object):
+class Eqn2Latex:
     def __init__(self):
-        self._translator = EqnTranslator().custom(
-            sys.modules[__name__], 'eqn_')
+        self._translator = treebuilder.custom(sys.modules[__name__], 'eqn_')
 
     def translate(self, s):
         return self._translator.translate(s)
@@ -145,8 +144,7 @@ if __name__ == "__main__":
 
     class EqnTests(ut.TestCase):
         def setUp(self):
-            self.translator = EqnTranslator().custom(sys.modules[__name__],
-                                                     'eqn_')
+            self.translator = Eqn2Latex()
 
         def _runtests(self, examples):
             for case, expected in examples:
