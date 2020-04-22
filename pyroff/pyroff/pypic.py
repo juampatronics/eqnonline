@@ -36,8 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from ply import lex
 from ply import yacc
-import re
-import inspect
+from .utils import Translator
+import sys
 
 
 class PicException(Exception):
@@ -188,7 +188,8 @@ def p_primitive(p):
                  | line
                  | box'''
     print('p_primitive: ', *p)
-    p[0] = picnode('primitive', *p[1])
+    # p[0] = picnode('primitive', *p[1])
+    p[0] = p[1]
 
 
 def p_circle(p):
@@ -286,14 +287,12 @@ def p_single_move(p):
 def p_move_dist(p):
     '''move : MOVE direction
             | MOVE direction NUMBER'''
-    raise NotImplemented('p_move_dist')
+    raise NotImplementedError('p_move_dist')
 
 
-# converter =========================================================
-
-class PicTranslator:
-    expected = ['circle', 'box', 'radius', 'width', 'height', 'label']
-
+treebuilder = Translator(yacc.yacc(start='pic'),
+                         ['circle', 'box', 'radius',
+                          'width', 'height', 'label', 'primitive'])
 
 if __name__ == "__main__":
     import unittest as ut

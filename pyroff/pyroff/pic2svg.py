@@ -31,3 +31,44 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+from .pypic import treebuilder
+import sys
+
+
+def pic_circle(*args):
+    print('circle: ', *args)
+    return '<circle {} />'.format(' '.join(args))
+
+
+def pic_radius(*args):
+    print('radius: ', *args)
+    return 'r="{}"'.format(*args)
+
+
+class Pic2SVG:
+    def __init__(self, web=True):
+        self._translator = treebuilder.custom(sys.modules[__name__], 'pic_')
+        if web:
+            self._header = '<svg xmlns="http://www.w3.org/2000/svg">'
+        else:
+            self._header += '''<?xml version = "1.0" encoding = "UTF-8" standalone = "no"?>
+  <svg xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   version="1.0">'''
+        self._footer = '</svg>'
+
+    def translate(self, s):
+        return '{}\n{}\n{}'.format(
+            self._header, self._translator.translate(s), self._footer)
+
+    def translate_file(self, filename):
+        return self._translator.translate_file(filename)
+
+
+if __name__ == "__main__":
+    compiler = Pic2SVG()
+    print(compiler.translate('circle radius 0.5'))
