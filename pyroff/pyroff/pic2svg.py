@@ -37,12 +37,22 @@ import sys
 
 def pic_circle(*args):
     print('circle: ', *args)
-    return '<circle {} />'.format(' '.join(args))
+    return r'<circle {} />'.format(' '.join(args))
 
 
 def pic_radius(*args):
     print('radius: ', *args)
-    return 'r="{}"'.format(*args)
+    return r'r="{}"'.format(*args)
+
+
+def pic_label(*args):
+    print('label: ', *args)
+    return r'<text>{}</text>'.format(*args)
+
+
+def pic_primitive(*args):
+    print('primitive: ', *args)
+    return r'\n'.join(args)
 
 
 class Pic2SVG:
@@ -71,4 +81,4 @@ class Pic2SVG:
 
 if __name__ == "__main__":
     compiler = Pic2SVG()
-    print(compiler.translate('circle radius 0.5'))
+    print(compiler.translate('circle radius 0.5 "A"'))

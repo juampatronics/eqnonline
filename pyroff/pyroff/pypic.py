@@ -188,8 +188,7 @@ def p_primitive(p):
                  | line
                  | box'''
     print('p_primitive: ', *p)
-    # p[0] = picnode('primitive', *p[1])
-    p[0] = p[1]
+    p[0] = picnode('primitive', *p[1])
 
 
 def p_circle(p):
