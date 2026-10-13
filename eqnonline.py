@@ -4,20 +4,13 @@ Need to install PLY and Flask in your environment to be ableto run it.
 
 Juan Pablo de la Cruz Gutierrez
 """
-import sys
 import os
 from flask import Flask, send_from_directory, send_file, request, abort
-sys.path.append('pyroff')
 from pyroff.eqn2latex import Eqn2Latex, EqnException
 
 APP = Flask(__name__)
 EQN = Eqn2Latex()
 
-
-# def escape_chars(s, chars=r'\\'):
-#     'escape control characters'
-#     s = re.sub(r'([' + ''.join(chars) + '])', r'\\\1', s)
-#     return s
 
 @APP.route('/eqn', methods=['GET'])
 def eqn():

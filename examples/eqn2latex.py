@@ -36,8 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
 import os
 import re
-# you may as well add pyroff to PYTHONPATH
-sys.path.append('../')
 from pyroff.eqn2latex import Eqn2Latex
 
 

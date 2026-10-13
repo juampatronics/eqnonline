@@ -32,10 +32,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import sys
 import fileinput
-# you may as well add pyroff to PYTHONPATH
-sys.path.append('../')
 from pyroff.tbl2html import Tbl2Html
 
 header = '''

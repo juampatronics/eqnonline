@@ -1,1 +1,1 @@
-web: FLASK_APP=eqnonline.py flask run
+web: python eqnonline.py

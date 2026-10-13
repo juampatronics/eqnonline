@@ -1,6 +1,9 @@
-libs
+.venv/
 venv
-__pycache__
+libs
+tags
+__pycache__/
 .vscode
-*pyc
+*.pyc
+parsetab.py
 parser.out

@@ -1,23 +1,17 @@
-image: python:3.5
+image: python:3.13-slim
 
 before_script:
-  - pip3 install ply
-  - export PYTHONPATH=$PWD:$PYTHONPATH
+  - curl -LsSf https://astral.sh/uv/install.sh | sh
+  - export PATH="$HOME/.local/bin:$PATH"
 
 stages:
   - test
 
-job1:
+test:
   stage: test
   script:
-    - python3 -m pyroff.pyroff.pyeqn
-    - python3 -m pyroff.pyroff.eqn2latex
-    - python3 -m pyroff.pyroff.pytbl
-    - python3 -m pyroff.pyroff.tbl2html
-    - python3 -m pyroff.pyroff.ast
-    - python3 -m pyroff.pyroff.eqn
-    - python3 -m pyroff.pyroff.tbllexer
-    - python3 -m pyroff.pyroff.pypic
+    - uv sync
+    - uv run pytest
   only:
     - master
   tags:
