@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 parsetab.py
 parser.out
+__marimo__/
