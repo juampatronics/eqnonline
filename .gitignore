@@ -8,3 +8,4 @@ __pycache__/
 parsetab.py
 parser.out
 __marimo__/
+node_modules/

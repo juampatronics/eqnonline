@@ -1,0 +1,10 @@
+{
+  "name": "eqnonline-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Client-side build for the eqn → LaTeX web app",
+  "scripts": {
+    "build": "cp -f node_modules/katex/dist/katex.min.css src/katex.min.css && cp -rf node_modules/katex/dist/fonts src/ && rollup -c"
+  }
+}

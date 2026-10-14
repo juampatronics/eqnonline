@@ -1,4 +1,4 @@
-'use strict';
+import katex from 'katex';
 
 const input = document.getElementById('eqn-input');
 const button = document.getElementById('translate');
@@ -6,14 +6,19 @@ const status = document.getElementById('status');
 const output = document.getElementById('output');
 
 function showError(message) {
-  output.textContent = '';
+  output.innerHTML = '';
   status.textContent = message;
   status.hidden = false;
 }
 
 function showLatex(latex) {
   status.hidden = true;
-  output.textContent = latex;
+  output.innerHTML = '';
+  try {
+    katex.render(latex, output, { throwOnError: false });
+  } catch (err) {
+    output.textContent = latex;
+  }
 }
 
 async function translate() {
