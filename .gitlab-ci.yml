@@ -1,18 +1,35 @@
 image: python:3.13-slim
 
 before_script:
-  - curl -LsSf https://astral.sh/uv/install.sh | sh
+  - python -m pip install uv
   - export PATH="$HOME/.local/bin:$PATH"
 
 stages:
+  - build
   - test
+  - browser
+
+build:
+  stage: build
+  script:
+    - uv sync
+    - uv build
+  only:
+    - master
+  tags:
+    - docker
 
 test:
   stage: test
   script:
     - uv sync
-    - uv run pytest
+    - uv run pytest tests
   only:
     - master
+  tags:
+    - docker
+
+browser:
+  stage: browser
   tags:
     - docker
