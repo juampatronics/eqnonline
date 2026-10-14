@@ -1,19 +1,16 @@
 [project]
 name = "pyroff"
 version = "0.1.0"
+author = [
+  { name = "Juan Pablo de la Cruz Gutiérrez ", email = "juampatronics@gmail.com" },
+]
 description = "eqn/tbl/pic transpilers to LaTeX/HTML/SVG, plus the eqnonline live demo"
 readme = "README.md"
 requires-python = ">=3.9"
-dependencies = [
-    "ply>=3.11",
-    "aiohttp>=3.11",
-]
+dependencies = ["ply>=3.11", "aiohttp>=3.11"]
 
 [dependency-groups]
-dev = [
-    "pytest>=7.0",
-    "marimo>=0.17.6",
-]
+dev = ["pytest>=7.0", "marimo>=0.17.6"]
 
 [tool.hatch.build]
 # pyroff/parsetab.py is gitignored (generated artifact) but must ship in the wheel

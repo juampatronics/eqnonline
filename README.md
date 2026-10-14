@@ -1,26 +1,114 @@
-# How to get started
-You only need [uv](https://docs.astral.sh/uv/) — it manages the virtual
-environment and all dependencies. The web libraries (katex, codemirror, ...)
-are included in the project, so there is nothing else to install.
+# eqnonline — eqn → LaTeX, live in your browser
 
-* Sync the project (creates `.venv`, installs `ply`, `flask`, `pytest` and the
-  `pyroff` package)
-  * `uv sync`
+This is a web app for interacting live with the **eqn → LaTeX** compiler
+(`pyroff.eqn2latex`). The transpiler runs **in the browser** via
+[Pyodide](https://pyodide.org) (Python compiled to WebAssembly): the page
+loads the `pyroff` package as a wheel, translates your eqn code client-side,
+and renders the result with [KaTeX](https://katex.org). No server is involved
+in the translation.
 
-* Run the test suite
-  * `uv run pytest`
+A small aiohttp server (`server.py`) is provided to *serve* the app locally
+(and also keeps a server-side `POST /eqn` API, used by the test suite).
 
-* Start the live demo
-  * `uv run python eqnonline.py` (starts the server at localhost:5000)
-  * try it: `curl 'http://localhost:5000/eqn?expr=x%20over%202'` → `\frac{x}{2}`
+## Getting started
 
+You need [uv](https://docs.astral.sh/uv/) (Python environment + dependencies)
+and Node.js 18+ with npm (for the JavaScript build).
 
-# Description
-This is a very simple web server so that you can interact live with the eqn to LaTeX
-compiler. It is still in a very early stage, so please be forgiving.
+```
+uv sync        # creates .venv, installs ply, aiohttp, pytest
+npm ci         # installs the pinned build tools (rollup, katex, ...)
 
-The server lives in `eqnonline.py`; the transpilers (eqn→LaTeX, tbl→HTML, pic→SVG)
-live in the `pyroff` package, with the test suite in `tests/`.
+uv run pytest  # run the test suite (53 passed, 1 xfailed)
 
-# Acknowledgments
-The nice pi icon enclosed in circle is freely available at [openclipart](https://openclipart.org/detail/220947/Pi%20Symbol%20in%20a%20Circle)
+uv run python server.py   # serve the app at http://localhost:8080
+```
+
+Host and port are configurable: `HOST` and `PORT` environment variables
+(defaults `0.0.0.0` / `8080`).
+
+Server API (also usable without the page):
+
+| Request | Response |
+|---|---|
+| `POST /eqn?eqn=x%20over%202` | `200`, `text/plain`, body `\frac{x}{2}` |
+| `POST /eqn` (no `eqn` param) | `400`, `Missing eqn code: use /eqn?eqn=<code>` |
+| `POST /eqn?eqn=left%20(%20x%20right` | `422`, error message |
+| `GET /` , `GET /src/...` , `GET /dist/...` | the web app, statically |
+
+## Building
+
+All build steps are npm scripts (run from the repo root):
+
+| Script | What it does |
+|---|---|
+| `npm run build` | Copies KaTeX (CSS + fonts) into `src/`, bundles `src/main.js` into the minified `src/main.bundle.js` (rollup + terser) and stamps the copyright header (author, license, date of compilation). |
+| `npm run wheel` | Builds the pure-Python `dist/pyroff-0.1.0-py3-none-any.whl` that Pyodide loads in the browser. First runs `import pyroff.pyeqn` to make sure the PLY `parsetab.py` in the tree is the *eqn* table (see note below) before building. |
+| `npm run release` | Runs both of the above, then assembles the deployment folder `release/` (see below). |
+
+### Note on the PLY parser table
+
+`pyroff/pyeqn.py` and `pyroff/pypic.py` both generate their PLY parser
+table into the same file (`pyroff/parsetab.py`). The test suite imports
+`pypic`, so after running `uv run pytest` the file on disk may hold the
+*pypic* table. That is harmless at runtime (PLY detects the mismatch and
+regenerates quietly), but a wheel built from that state would ship the wrong
+table. `npm run wheel` guards against this by importing `pyroff.pyeqn`
+first, which restores the correct table.
+
+## Deploying
+
+The app is fully static once built, so any static host works — including
+**GitHub Pages**.
+
+The deployable folder is `release/`, a self-contained copy containing
+exactly what the browser needs and nothing else (no Python source, no tests,
+no server):
+
+```
+release/
+├── index.html
+├── favicon.ico
+├── src/
+│   ├── main.bundle.js      # minified bundle with copyright header
+│   ├── main.css
+│   ├── katex.min.css
+│   └── fonts/              # KaTeX fonts
+└── dist/
+    └── pyroff-0.1.0-py3-none-any.whl
+```
+
+Build and publish to the `gh-pages` branch:
+
+```
+npm run release
+git add release/
+git commit -m "Update release"
+git subtree push --prefix release origin gh-pages
+```
+
+Then enable GitHub Pages for the `gh-pages` branch.
+
+At runtime the page fetches exactly two external resources (everything else
+is local): the Pyodide runtime (pinned: `v314.0.7`) from the jsDelivr CDN,
+and the PLY 3.11 wheel from `files.pythonhosted.org`. Both are pinned in
+`src/main.js` (`PYODIDE_INDEX`, `PLY_WHEEL`); if you upgrade either, update
+those URLs and re-verify in a real browser.
+
+## Layout
+
+* `pyroff/` — the transpilers (eqn→LaTeX, tbl→HTML, pic→SVG) package.
+* `tests/` — the test suite (transpiler + server).
+* `server.py` — aiohttp static host + `POST /eqn` API.
+* `src/main.js` — the browser client (Pyodide init, translation, KaTeX render);
+  bundled by rollup into `src/main.bundle.js`.
+* `index.html` — the page.
+* `package.json` — npm build scripts and pinned build dependencies.
+* `release/` — the assembled deployment folder (generated by `npm run release`).
+
+## Acknowledgments
+
+The nice pi icon enclosed in a circle is freely available at
+[openclipart](https://openclipart.org/detail/220947/Pi%20Symbol%20in%20a%20Circle).
+KaTeX is used for rendering; the PLY lexing/parsing tools power the
+transpilers.

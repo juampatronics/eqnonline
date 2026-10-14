@@ -6,7 +6,8 @@
   "description": "Client-side build for the eqn → LaTeX web app",
   "scripts": {
     "build": "cp -f node_modules/katex/dist/katex.min.css src/katex.min.css && cp -rf node_modules/katex/dist/fonts src/ && rollup -c && node scripts/add-banner.mjs",
-    "wheel": "uv run python -c 'import pyroff.pyeqn' && uv build --wheel && rm -f dist/.gitignore"
+    "wheel": "uv run python -c 'import pyroff.pyeqn' && uv build --wheel && rm -f dist/.gitignore",
+    "release": "npm run build && npm run wheel && rm -rf release && mkdir -p release/src release/dist && cp index.html favicon.ico release/ && cp src/main.bundle.js src/main.css src/katex.min.css release/src/ && cp -r src/fonts release/src/ && cp dist/pyroff-*-py3-none-any.whl release/dist/"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^29.0.3",
