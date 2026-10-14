@@ -5,7 +5,14 @@
   "type": "module",
   "description": "Client-side build for the eqn → LaTeX web app",
   "scripts": {
-    "build": "cp -f node_modules/katex/dist/katex.min.css src/katex.min.css && cp -rf node_modules/katex/dist/fonts src/ && rollup -c",
+    "build": "cp -f node_modules/katex/dist/katex.min.css src/katex.min.css && cp -rf node_modules/katex/dist/fonts src/ && rollup -c && node scripts/add-banner.mjs",
     "wheel": "uv run python -c 'import pyroff.pyeqn' && uv build --wheel && rm -f dist/.gitignore"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.0",
+    "katex": "^0.19.0",
+    "rollup": "^4.64.6"
   }
 }
