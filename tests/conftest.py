@@ -16,6 +16,7 @@ _LEXERS = {
     'test_eqn': pyeqn.tokenizer,
     'test_eqn2latex': pyeqn.tokenizer,
     'test_pyeqn': pyeqn.tokenizer,
+    'test_server': pyeqn.tokenizer,
     'test_pypic': pypic.tokenizer,
 }
 
