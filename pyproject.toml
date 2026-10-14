@@ -15,6 +15,11 @@ dev = [
     "marimo>=0.17.6",
 ]
 
+[tool.hatch.build]
+# pyroff/parsetab.py is gitignored (generated artifact) but must ship in the wheel
+ignore-vcs = true
+exclude = ["pyroff/parser.out"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

@@ -52,3 +52,13 @@ class EqnApiTests(ut.TestCase):
         status, body = _run(_request('GET', '/'))
         self.assertEqual(status, 200)
         self.assertIn('eqnonline', body)
+
+    def test_wheel_static(self):
+        async def go():
+            async with TestClient(TestServer(make_app())) as client:
+                resp = await client.get('/dist/pyroff-0.1.0-py3-none-any.whl')
+                body = await resp.read()
+                return resp.status, body
+        status, body = _run(go())
+        self.assertEqual(status, 200)
+        self.assertTrue(body.startswith(b'PK'))

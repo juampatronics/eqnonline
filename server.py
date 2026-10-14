@@ -44,6 +44,7 @@ def make_app() -> web.Application:
     app.router.add_post('/eqn', eqn)
     app.router.add_get('/', index)
     app.router.add_get('/favicon.ico', favicon)
+    app.router.add_static('/dist', os.path.join(os.path.dirname(__file__), 'dist'))
     app.router.add_static('/src', os.path.join(os.path.dirname(__file__), 'src'))
     return app
 

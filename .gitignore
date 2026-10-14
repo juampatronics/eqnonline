@@ -9,3 +9,5 @@ parsetab.py
 parser.out
 __marimo__/
 node_modules/
+dist/
+**/*.bundle.js
