@@ -5,6 +5,63 @@ const button = document.getElementById('translate');
 const status = document.getElementById('status');
 const output = document.getElementById('output');
 
+// ------------------------------------------------------------------ brand
+const BRAND = '\\textcolor{#3355aa}{\\varepsilon qn}\\text{online}';
+
+function renderMath(el, latex) {
+  try {
+    katex.render(latex, el, { throwOnError: false });
+  } catch (err) {
+    el.textContent = latex;
+  }
+}
+
+renderMath(document.getElementById('brand'), BRAND);
+
+// --------------------------------------------------------- reference panel
+// Examples and the exact LaTeX the transpiler produces (each verified
+// against pyroff.eqn2latex). Clicking a row loads the eqn code into the
+// editor.
+const EXAMPLES = [
+  ['x over 2', '\\frac{x}{2}'],
+  ['x sub i', 'x_{i}'],
+  ['x sub i sup n', 'x_{i}^{n}'],
+  ['sqrt a sub 2 + b sub 2', '\\sqrt{a_{2}} + b_{2}'],
+  ['sum from n=1 to N x sub n', '\\sum_{n=1}^{N} x_{n}'],
+  ['prod from i=1 to n a sub i', '\\prod_{i=1}^{n} a_{i}'],
+  ['int from 0 to 1 e sup x dx', '\\int_{0}^{1} e^{x} dx'],
+  ['alpha + beta', '\\alpha + \\beta'],
+  ['pi over 2', '\\frac{\\pi}{2}'],
+  ['left ( a + b right)', '\\left( a + b \\right)'],
+  ['a partial b', 'a \\partial b'],
+];
+
+(function buildReference() {
+  const tbody = document.querySelector('#ref-table tbody');
+  for (const [code, latex] of EXAMPLES) {
+    const tr = document.createElement('tr');
+    tr.tabIndex = 0;
+    const tdCode = document.createElement('td');
+    tdCode.className = 'code';
+    tdCode.textContent = code;
+    const tdMath = document.createElement('td');
+    renderMath(tdMath, latex);
+    tr.append(tdCode, tdMath);
+    const load = () => {
+      input.value = code;
+      input.focus();
+    };
+    tr.addEventListener('click', load);
+    tr.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        load();
+      }
+    });
+    tbody.append(tr);
+  }
+})();
+
 const PYODIDE_INDEX = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
 const PLY_WHEEL =
   'https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl';
@@ -64,11 +121,7 @@ function showError(message) {
 function showLatex(latex) {
   status.hidden = true;
   output.innerHTML = '';
-  try {
-    katex.render(latex, output, { throwOnError: false });
-  } catch (err) {
-    output.textContent = latex;
-  }
+  renderMath(output, latex);
 }
 
 // Pyodide surfaces Python exceptions as JS Errors whose message is the

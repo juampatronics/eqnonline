@@ -10,17 +10,26 @@ h1 {
   font-size: 40px;
   text-shadow: 2px 3px 1px #999;
   margin-bottom: 0.25rem;
+  text-align: center;
 }
 
 h2 {
   color: #555;
   font-weight: normal;
   margin-top: 0.5rem;
+  text-align: center;
+}
+
+#page {
+  max-width: 1100px;
+  margin: 2rem auto;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
 #app {
-  max-width: 720px;
-  margin: 2rem auto;
+  flex: 1 1 55%;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -82,4 +91,94 @@ button:disabled {
   border: 1px solid #bbb;
   border-radius: 4px;
   background: #fff;
+}
+
+#brand {
+  text-shadow: none;
+}
+
+#ref {
+  flex: 1 1 45%;
+  max-width: 460px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+}
+
+#ref h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+#ref ul {
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+#ref code {
+  font-family: Consolas, Menlo, monospace;
+  font-size: 0.9em;
+  background: #f0f2f8;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+}
+
+#ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+#ref-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+  border-bottom: 1px solid #ddd;
+  padding: 0.25rem 0.5rem;
+}
+
+#ref-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+#ref-table tr {
+  cursor: pointer;
+}
+
+#ref-table tr:hover td {
+  background: #f0f4fb;
+}
+
+#ref-table tr:hover .code {
+  color: #3355aa;
+}
+
+#ref-table .code {
+  font-family: Consolas, Menlo, monospace;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+#ref-hint {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 0;
+}
+
+@media (max-width: 800px) {
+  #page {
+    flex-direction: column;
+  }
+
+  #app,
+  #ref {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+  }
 }

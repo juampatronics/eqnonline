@@ -10,14 +10,35 @@
   <link rel="stylesheet" type="text/css" href="src/katex.min.css">
 
 <body>
-  <h1>eqnonline</h1>
+  <h1 id="brand" aria-label="eqnonline"></h1>
   <h2>eqn &rarr; LaTeX, live in your browser</h2>
-  <div id="app">
-    <label for="eqn-input">eqn code</label>
-    <textarea id="eqn-input" rows="6" placeholder="x over 2"></textarea>
-    <button id="translate" type="button">Translate</button>
-    <div id="status" hidden></div>
-    <div id="output"></div>
+  <div id="page">
+    <div id="app">
+      <label for="eqn-input">eqn code</label>
+      <textarea id="eqn-input" rows="6" placeholder="x over 2"></textarea>
+      <button id="translate" type="button">Translate</button>
+      <div id="status" hidden></div>
+      <div id="output"></div>
+    </div>
+    <aside id="ref">
+      <h3>eqn, in a minute</h3>
+      <ul id="ref-rules">
+        <li>Fractions: <code>x over y</code>.</li>
+        <li>Scripts: <code>x sub i</code> below, <code>x sup n</code> above.</li>
+        <li>Big operators: <code>sum from a to b</code>, <code>prod</code>, <code>int</code>.</li>
+        <li>Roots: <code>sqrt x</code>.</li>
+        <li>Greek letters by name: <code>alpha</code>, <code>beta</code>, <code>pi</code>, &hellip;</li>
+        <li>Sizing delimiters: <code>left ( &hellip; right)</code>.</li>
+        <li>Group with: <code> { ... } </code>. Mind spaces around curly braces.</li>
+      </ul>
+      <table id="ref-table">
+        <thead>
+          <tr><th>eqn</th><th>renders as</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="ref-hint">Click any example to load it into the editor.</p>
+    </aside>
   </div>
   <script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
   <script src="src/main.bundle.js"></script>
