@@ -182,3 +182,16 @@ button:disabled {
     max-width: none;
   }
 }
+
+#github-link {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  color: #555;
+  z-index: 100;
+  transition: color 0.2s;
+}
+
+#github-link:hover {
+  color: #3355aa;
+}
