@@ -30,7 +30,7 @@ const EXAMPLES = [
   ['sum from n=1 to N x sub n', '\\sum_{n=1}^{N} x_{n}'],
   ['prod from i=1 to n a sub i', '\\prod_{i=1}^{n} a_{i}'],
   ['int from 0 to 1 e sup x dx', '\\int_{0}^{1} e^{x} dx'],
-  ['alpha + beta', '\\alpha + \\beta'],
+  ['PSI ( alpha + beta )', '\\Psi(\\alpha + \\beta)'],
   ['pi over 2', '\\frac{\\pi}{2}'],
   ['left ( a + b right)', '\\left( a + b \\right)'],
   ['a partial b', 'a \\partial b'],
