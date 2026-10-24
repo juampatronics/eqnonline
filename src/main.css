@@ -1,6 +1,24 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f4f8;
+  min-height: 100vh;
+  background-color: #fffdf7;
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(5rem - 1px),
+      rgba(190, 91, 91, 0.25) calc(5rem - 1px),
+      rgba(190, 91, 91, 0.25) 5rem,
+      transparent 5rem
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 31px,
+      rgba(97, 151, 197, 0.2) 31px,
+      rgba(97, 151, 197, 0.2) 32px
+    ),
+    radial-gradient(ellipse at top left, #fffefa, #f5f0df);
   color: #222;
   margin: 0;
   padding: 2rem 1rem;
