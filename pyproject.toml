@@ -6,6 +6,7 @@ author = [
 ]
 description = "eqn/tbl/pic transpilers to LaTeX/HTML/SVG, plus the eqnonline live demo"
 readme = "README.md"
+license-files = ["LICENSE"]
 requires-python = ">=3.9"
 dependencies = ["ply>=3.11", "aiohttp>=3.11"]
 

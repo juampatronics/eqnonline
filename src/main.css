@@ -70,6 +70,28 @@ button:disabled {
   cursor: wait;
 }
 
+#auto-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+}
+
+#auto-row label {
+  font-weight: 500;
+}
+
+#auto-delay {
+  width: 120px;
+  accent-color: #3355aa;
+}
+
+#auto-label {
+  min-width: 4.5em;
+  font-variant-numeric: tabular-nums;
+  color: #555;
+}
+
 #status {
   padding: 0.5rem 0.75rem;
   border: 1px solid #c66;

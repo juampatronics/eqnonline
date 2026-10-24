@@ -25,6 +25,11 @@
       <label for="eqn-input">eqn code</label>
       <textarea id="eqn-input" rows="6" placeholder="x over 2"></textarea>
       <button id="translate" type="button">Translate</button>
+      <div id="auto-row">
+        <label for="auto-delay">auto-compile after</label>
+        <input type="range" id="auto-delay" min="0" max="2000" step="100" value="500">
+        <span id="auto-label">500 ms</span>
+      </div>
       <div id="status" hidden></div>
       <div id="output"></div>
     </div>

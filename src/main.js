@@ -4,6 +4,8 @@ const input = document.getElementById('eqn-input');
 const button = document.getElementById('translate');
 const status = document.getElementById('status');
 const output = document.getElementById('output');
+const autoDelay = document.getElementById('auto-delay');
+const autoLabel = document.getElementById('auto-label');
 
 // ------------------------------------------------------------------ brand
 const BRAND = '\\textcolor{#3355aa}{\\varepsilon qn}\\text{online}';
@@ -105,6 +107,9 @@ function beginInit() {
   return initPromise;
 }
 
+let autoTimer = null;
+let compiling = false;
+
 function setHint(message) {
   status.classList.add('info');
   status.textContent = message;
@@ -147,7 +152,7 @@ function startRuntime() {
   });
 }
 
-async function translate() {
+async function doTranslate() {
   const code = input.value.trim();
   if (!code) {
     showError('Type an eqn expression first.');
@@ -163,16 +168,59 @@ async function translate() {
   } catch (err) {
     showError(pythonErrorMessage(err));
   } finally {
+    compiling = false;
     button.disabled = false;
   }
 }
 
+async function translate() {
+  if (compiling) return;
+  compiling = true;
+  if (autoTimer) {
+    clearTimeout(autoTimer);
+    autoTimer = null;
+  }
+  await doTranslate();
+}
+
+function scheduleAuto() {
+  clearTimeout(autoTimer);
+  const delay = autoDelay.value;
+  if (!delay) return;
+  autoTimer = setTimeout(translate, delay);
+}
+
+function updateAutoLabel() {
+  const delay = autoDelay.value;
+  autoLabel.textContent = (delay === '' || delay === '0')
+    ? 'off'
+    : delay + ' ms';
+}
+
 button.addEventListener('click', translate);
+input.addEventListener('input', scheduleAuto);
 input.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault();
     translate();
   }
 });
+autoDelay.addEventListener('input', () => {
+  try {
+    localStorage.setItem('eqn-autodelay', autoDelay.value);
+  } catch {}
+  updateAutoLabel();
+  scheduleAuto();
+});
+
+const storedRaw = localStorage.getItem('eqn-autodelay');
+if (storedRaw !== null) {
+  const storedDelay = Number(storedRaw);
+  if (Number.isInteger(storedDelay) &&
+      storedDelay >= 0 && storedDelay <= 2000) {
+    autoDelay.value = storedDelay;
+  }
+}
+updateAutoLabel();
 
 startRuntime();

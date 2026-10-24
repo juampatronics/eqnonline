@@ -1,15 +1,21 @@
-// Stamp the copyright header (with build date) at the top of the bundle.
-// Terser 8 dropped its `banner` option, so this runs post-build.
-// Re-stamps on every run: any previous leading block comment is replaced.
+// Stamp the copyright header (with license text and build date) at the
+// top of the bundle. Terser 8 dropped its `banner` option, so this runs
+// post-build. Re-stamps on every run: any previous leading block comment
+// is replaced.
+
 import fs from 'node:fs';
 
 const file = 'src/main.bundle.js';
 const date = new Date().toISOString().slice(0, 10);
+const license = fs.readFileSync('LICENSE', 'utf8').trim().split('\n').map(line => line.trimStart().startsWith('*') ? line : ` * ${line}`).join('\n');
 const banner = `/*!
  * eqnonline — eqn → LaTeX web app (client bundle)
  * Copyright (c) ${new Date().getFullYear()} Juan Pablo de la Cruz Gutiérrez
- * Licensed under the BSD 3-Clause "New" or "Revised" License
  * Compiled: ${date}
+ *
+ * License (see LICENSE):
+ *
+ * ${license}
  */
 `;
 let code = fs.readFileSync(file, 'utf8');
