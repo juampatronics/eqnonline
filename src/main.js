@@ -1,7 +1,19 @@
 import katex from 'katex';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  from,
+  fromEvent,
+  map,
+  merge,
+  switchMap,
+  timeout,
+  catchError,
+  EMPTY,
+} from 'rxjs';
 
 const input = document.getElementById('eqn-input');
-const button = document.getElementById('translate');
 const status = document.getElementById('status');
 const output = document.getElementById('output');
 const autoDelay = document.getElementById('auto-delay');
@@ -23,7 +35,7 @@ renderMath(document.getElementById('brand'), BRAND);
 // --------------------------------------------------------- reference panel
 // Examples and the exact LaTeX the transpiler produces (each verified
 // against pyroff.eqn2latex). Clicking a row loads the eqn code into the
-// editor.
+// editor and compiles it immediately.
 const EXAMPLES = [
   ['x over 2', '\\frac{x}{2}'],
   ['x sub i', 'x_{i}'],
@@ -49,67 +61,11 @@ const EXAMPLES = [
     const tdMath = document.createElement('td');
     renderMath(tdMath, latex);
     tr.append(tdCode, tdMath);
-    const load = () => {
-      input.value = code;
-      input.focus();
-    };
-    tr.addEventListener('click', load);
-    tr.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        load();
-      }
-    });
     tbody.append(tr);
   }
 })();
 
-const PYODIDE_INDEX = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
-const PLY_WHEEL =
-  'https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl';
-
-const SETUP = `
-import pyroff.pyeqn as _pyeqn
-from pyroff.eqn2latex import Eqn2Latex
-_EQN = Eqn2Latex()
-
-def translate(code):
-    _pyeqn.tokenizer.begin('INITIAL')
-    return _EQN.translate(code)
-`;
-
-let pyTranslate = null;
-let initPromise = null;
-
-async function initPyodide() {
-  const pyodide = await globalThis.loadPyodide({ indexURL: PYODIDE_INDEX });
-  await pyodide.loadPackage([PLY_WHEEL, 'dist/pyroff-0.1.0-py3-none-any.whl']);
-  await pyodide.runPythonAsync(SETUP);
-  pyTranslate = pyodide.globals.get('translate');
-}
-
-// One shared initialization; a failure clears initPromise so a later
-// Translate click retries from scratch.
-function beginInit() {
-  if (!initPromise) {
-    initPromise = initPyodide().then(
-      () => {
-        status.textContent = '';
-        status.classList.remove('info');
-        status.hidden = true;
-      },
-      (err) => {
-        initPromise = null;
-        throw err;
-      },
-    );
-  }
-  return initPromise;
-}
-
-let autoTimer = null;
-let compiling = false;
-
+// --------------------------------------------------------------- UI state
 function setHint(message) {
   status.classList.add('info');
   status.textContent = message;
@@ -142,85 +98,138 @@ function pythonErrorMessage(err) {
   return last;
 }
 
-function startRuntime() {
-  setHint('Loading Python runtime…');
-  button.disabled = true;
-  beginInit().then(null, (err) => {
-    showError(pythonErrorMessage(err));
-  }).finally(() => {
-    button.disabled = false;
-  });
+// ------------------------------------------------------- Python runtime
+const PYODIDE_INDEX = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
+const PLY_WHEEL =
+  'https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl';
+
+const SETUP = `
+import pyroff.pyeqn as _pyeqn
+from pyroff.eqn2latex import Eqn2Latex
+_EQN = Eqn2Latex()
+
+def translate(code):
+    _pyeqn.tokenizer.begin('INITIAL')
+    return _EQN.translate(code)
+`;
+
+let pyTranslate = null;
+let initPromise = null;
+
+async function initPyodide() {
+  const pyodide = await globalThis.loadPyodide({ indexURL: PYODIDE_INDEX });
+  await pyodide.loadPackage([PLY_WHEEL, 'dist/pyroff-0.1.0-py3-none-any.whl']);
+  await pyodide.runPythonAsync(SETUP);
+  pyTranslate = pyodide.globals.get('translate');
 }
 
-async function doTranslate() {
-  const code = input.value.trim();
-  if (!code) {
-    showError('Type an eqn expression first.');
-    return;
+// One shared initialization; a failure clears initPromise so a later
+// request retries from scratch.
+function beginInit() {
+  if (!initPromise) {
+    initPromise = initPyodide().then(null, (err) => {
+      initPromise = null;
+      throw err;
+    });
   }
-  button.disabled = true;
-  try {
-    if (!pyTranslate) {
-      setHint('Loading Python runtime…');
-      await beginInit();
-    }
-    showLatex(pyTranslate(code));
-  } catch (err) {
-    showError(pythonErrorMessage(err));
-  } finally {
-    compiling = false;
-    button.disabled = false;
-  }
+  return initPromise;
 }
 
-async function translate() {
-  if (compiling) return;
-  compiling = true;
-  if (autoTimer) {
-    clearTimeout(autoTimer);
-    autoTimer = null;
-  }
-  await doTranslate();
+function translate(code) {
+  return beginInit().then(() => pyTranslate(code));
 }
 
-function scheduleAuto() {
-  clearTimeout(autoTimer);
-  const delay = autoDelay.value;
-  if (!delay) return;
-  autoTimer = setTimeout(translate, delay);
+// ------------------------------------------------------ reactive pipeline
+// The slider is the single source of truth for the debounce delay:
+// delayMs() reads the current slider value at fire time, so moving the
+// slider immediately changes the pending debounce.
+function delayMs() {
+  const delay = Number(autoDelay.value);
+  return Number.isInteger(delay) && delay > 0 ? delay : 0;
 }
 
 function updateAutoLabel() {
-  const delay = autoDelay.value;
-  autoLabel.textContent = (delay === '' || delay === '0')
-    ? 'off'
-    : delay + ' ms';
+  autoLabel.textContent = delayMs() ? delayMs() + ' ms' : 'off';
 }
 
-button.addEventListener('click', translate);
-input.addEventListener('input', scheduleAuto);
-input.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+const TRANSLATE_TIMEOUT_MS = 15000;
+
+// Ctrl/Cmd-Enter bypasses the debounce for immediate translation.
+const manual$ = fromEvent(input, 'keydown').pipe(
+  filter((event) => event.key === 'Enter' && (event.ctrlKey || event.metaKey)),
+  map((event) => {
     event.preventDefault();
-    translate();
-  }
+    return input.value.trim();
+  }),
+);
+
+// Example clicks: load the code into the editor, focus it, and compile.
+const examples$ = fromEvent(document.getElementById('ref-table'), 'click').pipe(
+  filter((event) => {
+    const tr = event.target && event.target.closest('tr');
+    return tr && tr.querySelector('.code');
+  }),
+  map((event) => event.target.closest('tr').querySelector('.code').textContent),
+);
+
+// Debounced auto-compile: debounce delay is read from the slider at
+// fire time, so moving the slider immediately re-arms the pending
+// debounce with the new delay.
+const debouncedInput$ = fromEvent(input, 'input').pipe(
+  map(() => input.value.trim()),
+  debounceTime(() => delayMs()),
+  distinctUntilChanged(),
+  filter((code) => code.length > 0),
+);
+
+// A single pipeline for all three sources. switchMap cancels the
+// previous in-flight translation when a new one arrives, so the UI
+// always reflects the latest code. Errors are caught and reported; the
+// stream stays alive so the next input can translate normally.
+merge(debouncedInput$, manual$, examples$)
+  .pipe(
+    switchMap((code) =>
+      from(translate(code)).pipe(
+        timeout(TRANSLATE_TIMEOUT_MS),
+        catchError((err) => {
+          showError(pythonErrorMessage(err));
+          return EMPTY;
+        }),
+      ),
+    ),
+  )
+  .subscribe((latex) => showLatex(String(latex)));
+
+// Example clicks also load the code into the editor.
+examples$.subscribe((code) => {
+  input.value = code;
+  input.focus();
 });
+
+// ------------------------------------------------------------- event wiring
 autoDelay.addEventListener('input', () => {
   try {
     localStorage.setItem('eqn-autodelay', autoDelay.value);
   } catch {}
   updateAutoLabel();
-  scheduleAuto();
 });
 
 const storedRaw = localStorage.getItem('eqn-autodelay');
 if (storedRaw !== null) {
   const storedDelay = Number(storedRaw);
-  if (Number.isInteger(storedDelay) &&
-      storedDelay >= 0 && storedDelay <= 2000) {
+  if (Number.isInteger(storedDelay) && storedDelay >= 0 && storedDelay <= 2000) {
     autoDelay.value = storedDelay;
   }
 }
 updateAutoLabel();
 
-startRuntime();
+setHint('Loading Python runtime…');
+beginInit().then(
+  () => {
+    status.textContent = '';
+    status.hidden = true;
+  },
+  (err) => {
+    showError(pythonErrorMessage(err));
+  },
+);

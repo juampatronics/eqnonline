@@ -31,8 +31,8 @@ The page auto-compiles your eqn code as you type: after you stop typing,
 the translation runs automatically once the configured delay has passed.
 The delay (0–2000 ms, default 500) is set with the **auto-compile after**
 slider under the editor; `0` turns auto-compile off and leaves the
-Translate button (and `Ctrl+Enter`) as the only trigger. Your chosen value
-is remembered in `localStorage`.
+`Ctrl+Enter` shortcut as the only trigger. Your chosen value is remembered
+in `localStorage`.
 
 Server API (also usable without the page):
 
