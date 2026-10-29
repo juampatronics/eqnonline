@@ -37,15 +37,15 @@ renderMath(document.getElementById('brand'), BRAND);
 // against pyroff.eqn2latex). Clicking a row loads the eqn code into the
 // editor and compiles it immediately.
 const EXAMPLES = [
-  ['x over 2', '\\frac{x}{2}'],
-  ['x sub i', 'x_{i}'],
-  ['x sub i sup n', 'x_{i}^{n}'],
-  ['sqrt a sub 2 + b sub 2', '\\sqrt{a_{2}} + b_{2}'],
-  ['sum from n=1 to N x sub n', '\\sum_{n=1}^{N} x_{n}'],
-  ['prod from i=1 to n a sub i', '\\prod_{i=1}^{n} a_{i}'],
+  ['e sup { i pi } = -1', 'e^{i\\pi} = -1'],
+  ['GAMMA ( 1 over 2 ) = sqrt pi', '\\Gamma (\\frac{1}{2}) = \\sqrt{\\pi}'],
+  ['prod x sub i sup n', '\\prod x_{i}^{n}'],
+  // ['df(x) over dx = lim from { h -> 0 } { f(x+h) - f(x) } over h', '\\frac{df(x)}{dx} = \\lim_{h \\rightarrow 0} \\frac{f(x+h)-f(x)}{h}'],
+  // ['{ partial sup 2 u } over { partial t sup 2 } = c sup 2 { partial sup 2 u } over { partial x sup 2 }', '\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\frac{\\partial^2 u}{\\partial x^2}'],
+  ['sum from n=1 to inf x sub n', '\\sum_{n=1}^{\\infty} x_{n}'],
+  ['lim from { n -> inf } theta sub n', '\\lim_{n\\rightarrow \\infty} \\theta_n'],
   ['int from 0 to 1 e sup x dx', '\\int_{0}^{1} e^{x} dx'],
   ['PSI ( alpha + beta )', '\\Psi(\\alpha + \\beta)'],
-  ['pi over 2', '\\frac{\\pi}{2}'],
   ['left ( a + b right)', '\\left( a + b \\right)'],
   ['a partial b', 'a \\partial b'],
 ];
