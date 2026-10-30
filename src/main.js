@@ -39,15 +39,11 @@ renderMath(document.getElementById('brand'), BRAND);
 const EXAMPLES = [
   ['e sup { i pi } = -1', 'e^{i\\pi} = -1'],
   ['GAMMA ( 1 over 2 ) = sqrt pi', '\\Gamma (\\frac{1}{2}) = \\sqrt{\\pi}'],
-  ['prod x sub i sup n', '\\prod x_{i}^{n}'],
-  // ['df(x) over dx = lim from { h -> 0 } { f(x+h) - f(x) } over h', '\\frac{df(x)}{dx} = \\lim_{h \\rightarrow 0} \\frac{f(x+h)-f(x)}{h}'],
-  // ['{ partial sup 2 u } over { partial t sup 2 } = c sup 2 { partial sup 2 u } over { partial x sup 2 }', '\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\frac{\\partial^2 u}{\\partial x^2}'],
-  ['sum from n=1 to inf x sub n', '\\sum_{n=1}^{\\infty} x_{n}'],
-  ['lim from { n -> inf } theta sub n', '\\lim_{n\\rightarrow \\infty} \\theta_n'],
+  ['df(x) over dx = lim from { h -> 0 } { f(x+h) - f(x) } over h', '\\frac{df(x)}{dx} = \\lim_{h \\rightarrow 0} \\frac{f(x+h)-f(x)}{h}'],
+  ['{ partial sup 2 u } over { partial t sup 2 } = c sup 2 { partial sup 2 u } over { partial x sup 2 }', '\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\frac{\\partial^2 u}{\\partial x^2}'],
+  ['prod from i=0 to inf sum from n=1 to inf x sub n sup i', '\\prod_{i=0}^{\\infty} \\sum_{n=1}^{\\infty} x_{n}^i'],
   ['int from 0 to 1 e sup x dx', '\\int_{0}^{1} e^{x} dx'],
-  ['PSI ( alpha + beta )', '\\Psi(\\alpha + \\beta)'],
-  ['left ( a + b right)', '\\left( a + b \\right)'],
-  ['a partial b', 'a \\partial b'],
+  ['PSI left ( { alpha + beta } over gamma right)', '\\Psi\\left(\\frac{\\alpha + \\beta}{\\gamma}\\right)'],
 ];
 
 (function buildReference() {

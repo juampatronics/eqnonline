@@ -146,6 +146,7 @@ textarea {
 
 #ref-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   margin-top: 0.75rem;
 }
@@ -181,7 +182,8 @@ textarea {
 #ref-table .code {
   font-family: Consolas, Menlo, monospace;
   font-size: 14px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 #ref-hint {
