@@ -36,11 +36,11 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Run Python tests
-        run: uv run pytest
-
       - name: Build web assets and Python wheel
         run: |
           npm run build
           npm run wheel
           npm run release
+
+      - name: Run Python tests
+        run: uv run pytest
